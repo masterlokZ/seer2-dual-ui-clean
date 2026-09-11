@@ -244,16 +244,22 @@ package animation.layer
          });
       }
       
-      public function playLeftPresent(param1:Function, param2:Function) : void
+      public function playLeftPresent(param1:Function, param2:Function = null) : void
       {
          var pcb:Function = param1;
-         var ecb:Function = param2;
-         var sprite:PresentAnimation = new PresentAnimation();
-         addChild(sprite);
-         sprite.initData({"onFighterPresentFun":pcb});
-         sprite.play();
-         Utils.once(sprite,"animationEnd",function():void
+        var ecb:Function = param2;
+        var sprite:PresentAnimation = new PresentAnimation();
+        addChild(sprite);
+         sprite.initData({"onFighterPresentFun":function():void
          {
+            if(pcb != null)
+            {
+               try { pcb(); } catch(e:*) {}
+            }
+         }});
+        sprite.play();
+        Utils.once(sprite,"animationEnd",function():void
+        {
             if(ecb != null)
             {
                ecb();

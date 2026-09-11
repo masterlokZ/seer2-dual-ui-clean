@@ -25,6 +25,7 @@ package animation.layer
    import flash.geom.Point;
    import flash.geom.Rectangle;
    import flash.utils.Dictionary;
+   import flash.utils.getQualifiedClassName;
    import flash.utils.setTimeout;
    import utils.CacheUtils;
    import utils.Utils;
@@ -90,14 +91,24 @@ package animation.layer
       
       public function PetLayer()
       {
-         var _loc1_:int = 0;
-         super();
-         addEventListener(Event.REMOVED_FROM_STAGE,onRemovedFromStage,false,0,true);
-         this.fighters = new Vector.<FightPet>();
-         this.fighters.push(FightPet.build(1,2));
-         this.fighters.push(FightPet.build(2,2));
-         this.fighters.push(FightPet.build(1,1));
-         this.fighters.push(FightPet.build(2,1));
+        var _loc1_:int = 0;
+        super();
+        addEventListener(Event.REMOVED_FROM_STAGE,onRemovedFromStage,false,0,true);
+        addEventListener(Event.ADDED_TO_STAGE,function(param1:Event):void
+        {
+           try
+           {
+              stage.quality = "high";
+           }
+           catch(ignored:*)
+           {
+           }
+        },false,0,true);
+        this.fighters = new Vector.<FightPet>();
+        this.fighters.push(FightPet.build(1,2));
+        this.fighters.push(FightPet.build(2,2));
+        this.fighters.push(FightPet.build(1,1));
+        this.fighters.push(FightPet.build(2,1));
          _loc1_ = 0;
          while(_loc1_ < fighters.length)
          {
@@ -1464,19 +1475,39 @@ package animation.layer
          return false;
       }
       
-      private function isExternalCompactTimeline(param1:MovieClip) : Boolean
-      {
-         if(param1 == null || findTimelineLabel(param1,["待机","物理攻击","属性攻击","特殊攻击","被打","必杀"]) != "")
-         {
-            return false;
-         }
-         return findTimelineLabel(param1,["attack","atk","attack1","sa","sa5","cp","hidemove","hited","hurt","hit"]) != "" || findDedicatedMoveLabel(param1) != "";
-      }
-      
-      private function resolveExternalLabel(param1:MovieClip, param2:String) : String
+     private function isExternalCompactTimeline(param1:MovieClip) : Boolean
+     {
+        if(param1 == null || findTimelineLabel(param1,["待机","物理攻击","属性攻击","特殊攻击","被打","必杀"]) != "")
+        {
+           return false;
+        }
+        return findTimelineLabel(param1,["attack","atk","attack1","sa","sa5","as5","attack5","cp","hidemove","hited","hurt","hit","add1","add2","add3","ultimate","ultra","power","idle","stand","wait","transform"]) != "" || hasMoveLabel(param1);
+     }
+     
+     private function hasMoveLabel(param1:MovieClip) : Boolean
+     {
+        if(param1 == null || param1.currentLabels == null)
+        {
+           return false;
+        }
+        for each(var item:Object in param1.currentLabels)
+        {
+           if(item != null && item.name != null && String(item.name).toLowerCase().indexOf("moves_") == 0)
+           {
+              return true;
+           }
+        }
+        return false;
+     }
+     
+     private function resolveExternalLabel(param1:MovieClip, param2:String) : String
       {
          var dedicated:String = "";
-         if(param2 == IDLE)
+        if(param2 == "变身效果")
+        {
+           return findTimelineLabel(param1,["变身效果","变身","transform","morph","change","appear","present","show","entrance"]);
+        }
+        if(param2 == IDLE)
          {
             return findTimelineLabel(param1,["idle","stand","wait","attack","atk","attack1"]);
          }
@@ -1495,7 +1526,11 @@ package animation.layer
          if(FighterActionType.superAtk().indexOf(param2) >= 0)
          {
             dedicated = findDedicatedMoveLabel(param1);
-            return dedicated != "" ? dedicated : findTimelineLabel(param1,["hidemove","sa5","ultimate","ultra","power","attack","atk","attack1","normalAttack","sa","special"]);
+            if(dedicated != "")
+            {
+               return dedicated;
+            }
+            return findTimelineLabel(param1,["add1","add2","add3","add4","add5","hidemove","sa5","attack5","as5","ultimate","ultra","power","sa","attack","atk","attack1","normalAttack","special"]);
          }
          if(FighterActionType.hurt().indexOf(param2) >= 0)
          {
@@ -1531,19 +1566,59 @@ package animation.layer
          return "";
       }
       
+      private static var dedicatedMoveCache:Dictionary = new Dictionary(true);
+
       private function findDedicatedMoveLabel(param1:MovieClip) : String
       {
          var item:Object = null;
          var name:String = "";
+         var lname:String = "";
+         if(param1 == null || param1.currentLabels == null)
+         {
+            return "";
+         }
+         if(dedicatedMoveCache[param1] !== undefined)
+         {
+            return String(dedicatedMoveCache[param1]);
+         }
+         var bestScore:int = -1;
+         var bestLabel:String = "";
          for each(item in param1.currentLabels)
          {
-            name = item == null || item.name == null ? "" : item.name.toLowerCase();
-            if(name.indexOf("moves_") == 0)
+            if(item == null || item.name == null)
             {
-               return item.name;
+               continue;
+            }
+            name = String(item.name);
+            lname = name.toLowerCase();
+            var score:int = -1;
+            if(lname == "add1")
+            {
+               score = 50000;
+            }
+            else if(lname == "attack5" || lname == "sa5" || lname == "as5" || lname == "hidemove" || lname == "ultimate" || lname == "ultra" || lname == "power")
+            {
+               score = 35000;
+            }
+            else if(lname.indexOf("moves_") == 0)
+            {
+               var idMatch:Array = lname.match(/moves_(\d+)/i);
+               var mId:int = idMatch != null && idMatch.length > 1 ? int(idMatch[1]) : 0;
+               score = 10000 + mId;
+            }
+            else if(lname.indexOf("add") == 0)
+            {
+               score = 20000;
+            }
+            if(score > bestScore)
+            {
+               bestScore = score;
+               bestLabel = name;
             }
          }
-         return "";
+         
+         dedicatedMoveCache[param1] = bestLabel;
+         return bestLabel;
       }
       
       private function findExternalAction(param1:MovieClip) : MovieClip
@@ -1567,64 +1642,91 @@ package animation.layer
          return param1.numChildren > 0 ? param1.getChildAt(0) as MovieClip : null;
       }
       
-      private function applyExternalPlacement(param1:MovieClip, param2:FightPet) : void
-      {
-         var pet:MovieClip = param1;
-         var fighter:FightPet = param2;
-         var bounds:Rectangle = null;
-         var fitScale:Number = 1;
-         var targetBaselineY:Number = EXTERNAL_TARGET_BASELINE_Y;
-         if(pet == null || fighter == null || externalPlaced[pet] === true || !isExternalCompactTimeline(pet))
+     private function applyExternalPlacement(param1:MovieClip, param2:FightPet) : void
+     {
+        var pet:MovieClip = param1;
+        var fighter:FightPet = param2;
+        var bounds:Rectangle = null;
+        var fitScale:Number = 1;
+        var customOffsetX:Number = 0;
+        var customOffsetY:Number = 0;
+        var centerX:Number = 0;
+        var bottom:Number = 0;
+        if(pet == null || fighter == null || externalPlaced[pet] === true || !isExternalCompactTimeline(pet))
+        {
+           return;
+        }
+        try
+        {
+           bounds = pet.getBounds(pet);
+           if(bounds == null || bounds.width <= 0 || bounds.height <= 0)
+           {
+              scheduleExternalPlacement(pet,fighter);
+              return;
+           }
+           if(isFinite(bounds.width) && isFinite(bounds.height) && bounds.width < 10000 && bounds.height < 10000)
+           {
+              fitScale = Math.min(1,EXTERNAL_MAX_RENDER_WIDTH / bounds.width,EXTERNAL_MAX_RENDER_HEIGHT / bounds.height) * UClientUniversalBattleAdapter.fitMultiplier(pet,bounds);
+              if(bounds.width < 400 && bounds.height < 340)
+              {
+                 fitScale = Math.min(1.35,480 / bounds.width,400 / bounds.height);
+              }
+              if(pet.hasOwnProperty("battleScale") && Number(pet["battleScale"]) > 0)
+              {
+                 fitScale = Number(pet["battleScale"]);
+              }
+              if(pet.hasOwnProperty("battleOffsetX"))
+              {
+                 customOffsetX = Number(pet["battleOffsetX"]);
+              }
+              if(pet.hasOwnProperty("battleOffsetY"))
+              {
+                 customOffsetY = Number(pet["battleOffsetY"]);
+              }
+              pet.scaleX = fighter.scaleX * fitScale;
+              pet.scaleY = fighter.scaleY * fitScale;
+              
+              var groundLineY:Number = fighter.y + 382.0;
+              var targetCenterX:Number = fighter.x + EXTERNAL_TARGET_CENTER_X * fighter.scaleX;
+              centerX = bounds.x + bounds.width * 0.5;
+              bottom = bounds.y + bounds.height;
+              pet.x = targetCenterX - centerX * fitScale * fighter.scaleX + customOffsetX * fighter.scaleX;
+              pet.y = groundLineY - bottom * fitScale * fighter.scaleY + customOffsetY * fighter.scaleY;
+              externalPlaced[pet] = true;
+              delete externalPlacementAttempts[pet];
+           }
+        }
+        catch(ignored:*)
+        {
+        }
+     }
+     
+     private function scheduleExternalPlacement(param1:MovieClip, param2:FightPet) : void
+     {
+        var pet:MovieClip = param1;
+        var fighter:FightPet = param2;
+        var handler:Function = null;
+        if(pet == null || externalPlacementHandlers[pet] != null)
+        {
+           return;
+        }
+         if(int(externalPlacementAttempts[pet]) > 12)
          {
+            pet.x = fighter.x + EXTERNAL_TARGET_CENTER_X * fighter.scaleX;
+            pet.y = fighter.y + (EXTERNAL_TARGET_BASELINE_Y - EXTERNAL_TEMPLATE_BASELINE_Y) * fighter.scaleY;
+            externalPlaced[pet] = true;
             return;
-         }
-         try
-         {
-            bounds = pet.getBounds(pet);
-            if(bounds == null || bounds.width <= 0 || bounds.height <= 0)
-            {
-               scheduleExternalPlacement(pet,fighter);
-               return;
-            }
-            if(isFinite(bounds.width) && isFinite(bounds.height) && bounds.width < 10000 && bounds.height < 10000)
-            {
-               fitScale = Math.min(1,EXTERNAL_MAX_RENDER_WIDTH / bounds.width,EXTERNAL_MAX_RENDER_HEIGHT / bounds.height) * UClientUniversalBattleAdapter.fitMultiplier(pet,bounds);
-               if(UClientUniversalBattleAdapter.supports(pet))
-               {
-                  targetBaselineY = EXTERNAL_UClient_TARGET_BASELINE_Y;
-               }
-               pet.scaleX = fighter.scaleX * fitScale;
-               pet.scaleY = fighter.scaleY * fitScale;
-               pet.x = fighter.x + (EXTERNAL_TARGET_CENTER_X - EXTERNAL_TEMPLATE_CENTER_X * fitScale) * fighter.scaleX;
-               pet.y = fighter.y + (targetBaselineY - EXTERNAL_TEMPLATE_BASELINE_Y * fitScale) * fighter.scaleY;
-               externalPlaced[pet] = true;
-               delete externalPlacementAttempts[pet];
-            }
-         }
-         catch(ignored:*)
-         {
-         }
-      }
-      
-      private function scheduleExternalPlacement(param1:MovieClip, param2:FightPet) : void
-      {
-         var pet:MovieClip = param1;
-         var fighter:FightPet = param2;
-         var handler:Function = null;
-         if(pet == null || externalPlacementHandlers[pet] != null)
-         {
-            return;
-         }
-         externalPlacementAttempts[pet] = int(externalPlacementAttempts[pet]) + 1;
-         handler = function(param1:Event):void
-         {
-            pet.removeEventListener(Event.FRAME_CONSTRUCTED,handler);
-            delete externalPlacementHandlers[pet];
-            applyExternalPlacement(pet,fighter);
-         };
-         externalPlacementHandlers[pet] = handler;
-         pet.addEventListener(Event.FRAME_CONSTRUCTED,handler,false,0,true);
-      }
+        }
+        externalPlacementAttempts[pet] = int(externalPlacementAttempts[pet]) + 1;
+        handler = function(param1:Event):void
+        {
+           pet.removeEventListener(Event.FRAME_CONSTRUCTED,handler);
+           delete externalPlacementHandlers[pet];
+           applyExternalPlacement(pet,fighter);
+        };
+        externalPlacementHandlers[pet] = handler;
+        pet.addEventListener(Event.FRAME_CONSTRUCTED,handler,false,0,true);
+     }
       
       private function measureStructuralSubject(param1:MovieClip, param2:DisplayObjectContainer, param3:Rectangle) : Object
       {
@@ -1728,9 +1830,15 @@ package animation.layer
                   {
                      first = false;
                   }
-                  else
+                  else if(param1.parent != null)
                   {
-                     removeChild(param1);
+                     try
+                     {
+                        param1.parent.removeChild(param1);
+                     }
+                     catch(ignored:*)
+                     {
+                     }
                   }
                }
             };
@@ -1793,11 +1901,13 @@ package animation.layer
             };
             if(!checkVersion(version))
             {
+               resolve();
                return;
             }
             first = true;
             exist = fighter.pet;
-            if(change === 2 && exist && Utils.hasLabel(exist,"变身效果"))
+            var canTransform:Boolean = exist != null && (Utils.hasLabel(exist,"变身效果") || findTimelineLabel(exist,["变身效果","变身","transform","morph","change","appear","present","show"]) != "");
+            if(change === 2 && exist && canTransform)
             {
                setChildIndex(exist,3);
                updateStatus(exist,"变身效果",version);
@@ -1805,6 +1915,7 @@ package animation.layer
                {
                   if(!checkVersion(version))
                   {
+                     resolve();
                      return;
                   }
                   twiceWillRemove(exist);
