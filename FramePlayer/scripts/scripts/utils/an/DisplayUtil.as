@@ -52,7 +52,7 @@ package utils.an
          {
             return;
          }
-         var _loc3_:* = _loc5_;
+         var _loc3_:int = _loc5_;
          while(_loc3_ >= 0)
          {
             _loc4_ = param1.getChildAt(_loc3_) as DisplayObjectContainer;
@@ -125,14 +125,14 @@ package utils.an
          var child:InteractiveObject = null;
          var target:InteractiveObject = param1;
          var isAll:Boolean = param2;
-         var b:Boolean = Boolean(MOUSE_EVENT_LIST.some(function(param1:String, param2:int, param3:Array):Boolean
+         var b:Boolean = MOUSE_EVENT_LIST.some(function(param1:String, param2:int, param3:Array):Boolean
          {
             if(target.hasEventListener(param1))
             {
                return true;
             }
             return false;
-         }));
+         });
          if(!b)
          {
             if(target.name.indexOf("instance") != -1)
@@ -151,7 +151,7 @@ package utils.an
                {
                   mouseEnabledAll(child);
                }
-               i--;
+               i = i - 1;
             }
          }
       }
@@ -222,7 +222,7 @@ package utils.an
          {
             return;
          }
-         var _loc2_:* = _loc5_;
+         var _loc2_:int = _loc5_;
          while(_loc2_ >= 0)
          {
             _loc4_ = param1.getChildAt(_loc2_) as DisplayObjectContainer;

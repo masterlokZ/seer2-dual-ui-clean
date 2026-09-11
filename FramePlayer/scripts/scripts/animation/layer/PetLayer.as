@@ -59,7 +59,7 @@ package animation.layer
       
       private static const EXTERNAL_UClient_TARGET_BASELINE_Y:Number = 425;
       
-      public var fighters:Vector.<FightPet>;
+      private var fighters:Vector.<FightPet>;
       
       public var bgLayer:BackLayer;
       
@@ -105,15 +105,6 @@ package animation.layer
             addChild(fighters[_loc1_].pet);
             _loc1_++;
          }
-      }
-      
-      public function getLeftMasterPet() : MovieClip
-      {
-         if(this.fighters != null && this.fighters.length > 2 && this.fighters[2] != null)
-         {
-            return this.fighters[2].pet;
-         }
-         return null;
       }
       
       public function initData(param1:FrameData, param2:Function) : void
@@ -455,11 +446,6 @@ package animation.layer
          var pet:MovieClip = param1;
          var label:String = param2;
          var version:int = param3;
-         if(isExternalIdleOnlyPose(pet))
-         {
-            updateExternalIdleOnlyStatus(pet,label);
-            return;
-         }
          if(isExternalCompactTimeline(pet))
          {
             updateExternalStatus(pet,label);
@@ -480,14 +466,7 @@ package animation.layer
                label = "待机";
             }
          }
-         if(pet.currentLabels.length == 0 && pet.numChildren > 0 && pet.getChildAt(0) is MovieClip)
-         {
-            (pet.getChildAt(0) as MovieClip).gotoAndStop(label);
-         }
-         else
-         {
-            pet.gotoAndStop(label);
-         }
+         pet.gotoAndStop(label);
          startNativeAction(pet);
          if(FighterActionType.end().indexOf(label) >= 0)
          {
@@ -580,42 +559,6 @@ package animation.layer
             return;
          }
          applyExternalActionState(pet,status,ownAction,action);
-      }
-      
-      private function updateExternalIdleOnlyStatus(param1:MovieClip, param2:String) : void
-      {
-         var pet:MovieClip = param1;
-         var status:String = param2;
-         var shouldHit:Boolean = FighterActionType.atk().indexOf(status) >= 0;
-         var action:MovieClip = null;
-         if(pet == null)
-         {
-            return;
-         }
-         stopExternalAction(pet);
-         externalTerminalSuppressed[pet] = true;
-         try
-         {
-            pet.gotoAndStop(1);
-         }
-         catch(ignored:*)
-         {
-         }
-         action = findExternalAction(pet);
-         if(action != null)
-         {
-            resumeExternalIdleOnlyPose(action,0);
-         }
-         if(shouldHit)
-         {
-            setTimeout(function():void
-            {
-               if(pet != null && pet.parent != null)
-               {
-                  pet.dispatchEvent(new Event("hit"));
-               }
-            },0);
-         }
       }
       
       private function isExternalIdleLabel(param1:String) : Boolean
@@ -1524,82 +1467,11 @@ package animation.layer
       
       private function isExternalCompactTimeline(param1:MovieClip) : Boolean
       {
-         if(isExternalIdleOnlyPose(param1))
-         {
-            return true;
-         }
          if(param1 == null || findTimelineLabel(param1,["待机","物理攻击","属性攻击","特殊攻击","被打","必杀"]) != "")
          {
             return false;
          }
          return findTimelineLabel(param1,["attack","atk","attack1","sa","sa5","as5","attack5","cp","hidemove","hited","hurt","hit","add1","add2","add3","ultimate","ultra","power"]) != "" || findDedicatedMoveLabel(param1) != "";
-      }
-      
-      private function isExternalIdleOnlyPose(param1:MovieClip) : Boolean
-      {
-         var item:Object = null;
-         var name:String = "";
-         if(param1 == null || param1.totalFrames > 1 || param1.numChildren <= 0)
-         {
-            return false;
-         }
-         try
-         {
-            for each(item in param1.currentLabels)
-            {
-               name = item == null || item.name == null ? "" : item.name.toLowerCase();
-               if(name != "" && name != "attack" && name != "atk" && name != "attack1")
-               {
-                  return false;
-               }
-            }
-         }
-         catch(ignored:*)
-         {
-            return false;
-         }
-         return findExternalAction(param1) != null;
-      }
-      
-      private function resumeExternalIdleOnlyPose(param1:DisplayObject, param2:int = 0) : void
-      {
-         var container:DisplayObjectContainer = param1 as DisplayObjectContainer;
-         var child:DisplayObject = null;
-         var clip:MovieClip = param1 as MovieClip;
-         var index:int = 0;
-         if(param1 == null || param2 > 8)
-         {
-            return;
-         }
-         if(clip != null)
-         {
-            if(clip.totalFrames > 1)
-            {
-               try
-               {
-                  clip.play();
-               }
-               catch(ignored:*)
-               {
-               }
-            }
-         }
-         if(container == null)
-         {
-            return;
-         }
-         while(index < container.numChildren)
-         {
-            try
-            {
-               child = container.getChildAt(index);
-               resumeExternalIdleOnlyPose(child,param2 + 1);
-            }
-            catch(ignored:*)
-            {
-            }
-            index++;
-         }
       }
       
       private function resolveExternalLabel(param1:MovieClip, param2:String) : String
@@ -1637,14 +1509,6 @@ package animation.layer
          if(param2 == "胜利")
          {
             return findTimelineLabel(param1,["win","victory"]);
-         }
-         if(param2 == "变身效果")
-         {
-            return findTimelineLabel(param1,["变身效果","transform","morph","change","appear","present","show","entrance"]);
-         }
-         if(param2 == "个性出场")
-         {
-            return findTimelineLabel(param1,["primary","present","show","entrance","appear"]);
          }
          return "";
       }
@@ -1821,15 +1685,15 @@ package animation.layer
       private function findFrameForLabel(param1:MovieClip, param2:String) : int
       {
          var item:Object = null;
-         if(param1 == null)
+         if(param1 == null || param1.currentLabels == null)
          {
             return 0;
          }
          for each(item in param1.currentLabels)
          {
-            if(item != null && item.name != null && item.name.toLowerCase() == param2.toLowerCase())
+            if(item != null && item.name != null && String(item.name).toLowerCase() == param2.toLowerCase())
             {
-               return int(item.frame);
+               return item.frame;
             }
          }
          return 0;
@@ -1887,21 +1751,14 @@ package animation.layer
       
       private function applyExternalPlacement(param1:MovieClip, param2:FightPet) : void
       {
-         var isUClient:Boolean;
-         var extractedId:uint;
-         var idMatches:Array;
-         var isCompanionTransform:Boolean;
-         var customOffsetX:Number;
-         var customOffsetY:Number;
-         var isUClientNative:Boolean;
-         var subject:Object;
-         var centerX:Number;
-         var bottom:Number;
          var pet:MovieClip = param1;
          var fighter:FightPet = param2;
          var bounds:Rectangle = null;
          var fitScale:Number = 1;
-         var targetBaselineY:Number = EXTERNAL_TARGET_BASELINE_Y;
+         var customOffsetX:Number = 0;
+         var customOffsetY:Number = 0;
+         var centerX:Number = 0;
+         var bottom:Number = 0;
          if(pet == null || fighter == null || externalPlaced[pet] === true || !isExternalCompactTimeline(pet))
          {
             return;
@@ -1917,64 +1774,28 @@ package animation.layer
             if(isFinite(bounds.width) && isFinite(bounds.height) && bounds.width < 10000 && bounds.height < 10000)
             {
                fitScale = Math.min(1,EXTERNAL_MAX_RENDER_WIDTH / bounds.width,EXTERNAL_MAX_RENDER_HEIGHT / bounds.height) * UClientUniversalBattleAdapter.fitMultiplier(pet,bounds);
-               isUClient = UClientUniversalBattleAdapter.supports(pet);
-               if(isUClient)
+               if(bounds.width < 400 && bounds.height < 340)
                {
-                  targetBaselineY = EXTERNAL_UClient_TARGET_BASELINE_Y;
+                  fitScale = Math.min(1.35,480 / bounds.width,400 / bounds.height);
                }
-               extractedId = 0;
-               if(pet != null && pet.hasOwnProperty("sourceId") && uint(pet["sourceId"]) > 0)
-               {
-                  extractedId = uint(pet["sourceId"]);
-               }
-               if(extractedId == 0 && fighter != null && fighter.url != null)
-               {
-                  idMatches = fighter.url.match(/\/(\d+)\.swf/);
-                  if(idMatches != null && idMatches.length > 1)
-                  {
-                     extractedId = uint(idMatches[1]);
-                  }
-               }
-               isCompanionTransform = extractedId >= 70160 && extractedId <= 70170 || extractedId >= 190000000 && extractedId < 300000000 || isUClient;
-               if(pet != null && pet.hasOwnProperty("battleScale") && Number(pet["battleScale"]) > 0)
+               if(pet.hasOwnProperty("battleScale") && Number(pet["battleScale"]) > 0)
                {
                   fitScale = Number(pet["battleScale"]);
                }
-               else if(isCompanionTransform)
-               {
-                  fitScale = 1.32;
-               }
-               customOffsetX = 0;
-               customOffsetY = 0;
-               if(pet != null && pet.hasOwnProperty("battleOffsetX"))
+               if(pet.hasOwnProperty("battleOffsetX"))
                {
                   customOffsetX = Number(pet["battleOffsetX"]);
                }
-               if(pet != null && pet.hasOwnProperty("battleOffsetY"))
+               if(pet.hasOwnProperty("battleOffsetY"))
                {
                   customOffsetY = Number(pet["battleOffsetY"]);
                }
-               if(!isCompanionTransform && (extractedId == 70138 || extractedId == 3788) && customOffsetX == 0 && customOffsetY == 0)
-               {
-                  customOffsetX = -11;
-                  customOffsetY = 95;
-               }
                pet.scaleX = fighter.scaleX * fitScale;
                pet.scaleY = fighter.scaleY * fitScale;
-               isUClientNative = isUClient && !isCompanionTransform;
-               if(isUClientNative)
-               {
-                  pet.x = fighter.x + (EXTERNAL_TARGET_CENTER_X - EXTERNAL_TEMPLATE_CENTER_X * fitScale) * fighter.scaleX;
-                  pet.y = fighter.y + (targetBaselineY - EXTERNAL_TEMPLATE_BASELINE_Y * fitScale) * fighter.scaleY;
-               }
-               else
-               {
-                  subject = measureRenderedSubject(pet,bounds);
-                  centerX = subject == null ? bounds.x + bounds.width * 0.5 : Number(subject.centerX);
-                  bottom = subject == null ? bounds.y + bounds.height : Number(subject.bottom);
-                  pet.x = fighter.x + (EXTERNAL_TARGET_CENTER_X - centerX * fitScale + customOffsetX) * fighter.scaleX;
-                  pet.y = EXTERNAL_TARGET_BASELINE_Y - bottom * fitScale + customOffsetY;
-               }
+               centerX = bounds.x + bounds.width * 0.5;
+               bottom = bounds.y + bounds.height;
+               pet.x = fighter.x + (EXTERNAL_TARGET_CENTER_X - centerX * fitScale + customOffsetX) * fighter.scaleX;
+               pet.y = fighter.y + (420.0 - bottom * fitScale + customOffsetY) * fighter.scaleY;
                externalPlaced[pet] = true;
                delete externalPlacementAttempts[pet];
             }
@@ -1991,6 +1812,13 @@ package animation.layer
          var handler:Function = null;
          if(pet == null || externalPlacementHandlers[pet] != null)
          {
+            return;
+         }
+         if(int(externalPlacementAttempts[pet]) > 12)
+         {
+            pet.x = fighter.x + EXTERNAL_TARGET_CENTER_X * fighter.scaleX;
+            pet.y = fighter.y + (420.0 - EXTERNAL_TEMPLATE_BASELINE_Y) * fighter.scaleY;
+            externalPlaced[pet] = true;
             return;
          }
          externalPlacementAttempts[pet] = int(externalPlacementAttempts[pet]) + 1;
@@ -2062,137 +1890,6 @@ package animation.layer
          return int(best.count) >= 6 ? best : null;
       }
       
-      private function weightedAxisQuantile(param1:Array, param2:Number, param3:Number) : int
-      {
-         var target:Number = param2 * param3;
-         var sum:Number = 0;
-         var index:int = 0;
-         while(index < param1.length)
-         {
-            sum += Number(param1[index]);
-            if(sum >= target)
-            {
-               return index;
-            }
-            index++;
-         }
-         return Math.max(0,param1.length - 1);
-      }
-      
-      private function measureRenderedSubject(param1:MovieClip, param2:Rectangle, param3:MovieClip = null) : Object
-      {
-         var result:Object;
-         var bitmapCenter:Number;
-         var bitmapTop:Number;
-         var bitmapBottom:Number;
-         var useDetachedStructuralAnchor:Boolean;
-         var scale:Number;
-         var width:int;
-         var height:int;
-         var bitmap:BitmapData;
-         var matrix:Matrix;
-         var pixels:Vector.<uint>;
-         var xWeights:Array;
-         var yWeights:Array;
-         var total:Number;
-         var index:int;
-         var alpha:int;
-         var weight:Number;
-         var x:int;
-         var y:int;
-         var sampleLimit:Number = 320;
-         var resourceBytes:Number = 0;
-         var structural:Object = this.measureStructuralSubject(param1,param3 == null ? param1 : param3,param2);
-         try
-         {
-            resourceBytes = param1.loaderInfo.bytesTotal;
-         }
-         catch(metricsError:*)
-         {
-         }
-         if(resourceBytes >= 12 * 1024 * 1024)
-         {
-            sampleLimit = 96;
-         }
-         scale = Math.min(1,sampleLimit / Math.max(1,param2.width),sampleLimit / Math.max(1,param2.height));
-         width = Math.max(4,Math.ceil(param2.width * scale));
-         height = Math.max(4,Math.ceil(param2.height * scale));
-         bitmap = null;
-         matrix = null;
-         pixels = null;
-         xWeights = [];
-         yWeights = [];
-         total = 0;
-         index = 0;
-         alpha = 0;
-         weight = 0;
-         x = 0;
-         y = 0;
-         if(width > 512 || height > 512)
-         {
-            return structural;
-         }
-         try
-         {
-            bitmap = new BitmapData(width,height,true,0);
-            matrix = param3 === param1 ? new Matrix() : param1.transform.matrix.clone();
-            matrix.a *= scale;
-            matrix.b *= scale;
-            matrix.c *= scale;
-            matrix.d *= scale;
-            matrix.tx = (matrix.tx - param2.x) * scale;
-            matrix.ty = (matrix.ty - param2.y) * scale;
-            bitmap.draw(param1,matrix,null,null,null,true);
-            pixels = bitmap.getVector(bitmap.rect);
-            while(x < width)
-            {
-               xWeights[x++] = 0;
-            }
-            while(y < height)
-            {
-               yWeights[y++] = 0;
-            }
-            while(index < pixels.length)
-            {
-               alpha = pixels[index] >>> 24 & 0xFF;
-               if(alpha >= 24)
-               {
-                  weight = alpha * alpha;
-                  x = index % width;
-                  y = int(index / width);
-                  xWeights[x] = Number(xWeights[x]) + weight;
-                  yWeights[y] = Number(yWeights[y]) + weight;
-                  total += weight;
-               }
-               index++;
-            }
-            if(total <= 0)
-            {
-               bitmap.dispose();
-               return structural;
-            }
-            bitmapCenter = param2.x + (this.weightedAxisQuantile(xWeights,total,0.5) + 0.5) / scale;
-            bitmapTop = param2.y + (this.weightedAxisQuantile(yWeights,total,0.015) + 0.5) / scale;
-            bitmapBottom = param2.y + (this.weightedAxisQuantile(yWeights,total,0.985) + 0.5) / scale;
-            useDetachedStructuralAnchor = structural != null && param2.width >= 900 && param2.height >= 500 && (Math.abs(bitmapCenter - Number(structural.centerX)) >= 120 || Math.abs(bitmapBottom - Number(structural.bottom)) >= 80);
-            result = {
-               "centerX":(structural == null ? bitmapCenter : Number(structural.centerX)),
-               "top":bitmapTop,
-               "bottom":(useDetachedStructuralAnchor ? Number(structural.bottom) : bitmapBottom)
-            };
-            bitmap.dispose();
-            return result;
-         }
-         catch(ignored:*)
-         {
-            if(bitmap != null)
-            {
-               bitmap.dispose();
-            }
-            return structural;
-         }
-      }
-      
       private function lazyApplyPet(param1:FightPet, param2:PetData, param3:int, param4:int, param5:Function, param6:int) : void
       {
          var url:String;
@@ -2228,7 +1925,6 @@ package animation.layer
          {
             var first:Boolean;
             var exist:MovieClip;
-            var canTransform:Boolean;
             var pet:MovieClip = param1;
             var twiceWillRemove:* = function(param1:MovieClip):void
             {
@@ -2276,7 +1972,6 @@ package animation.layer
                pet.scaleY = fighter.scaleY;
                fighter.url = url;
                fighter.pet = pet;
-               enableUClientBattleComposite(pet);
                UClientUniversalBattleAdapter.attach(pet);
                prewarmExternalAttackCover(pet);
                if(isExternalCompactTimeline(pet))
@@ -2308,8 +2003,7 @@ package animation.layer
             }
             first = true;
             exist = fighter.pet;
-            canTransform = exist != null && (Utils.hasLabel(exist,"变身效果") || findTimelineLabel(exist,["transform","morph","change"]) != "");
-            if(change === 2 && exist && canTransform)
+            if(change === 2 && exist && Utils.hasLabel(exist,"变身效果"))
             {
                setChildIndex(exist,3);
                updateStatus(exist,"变身效果",version);
@@ -2324,7 +2018,7 @@ package animation.layer
                   resolve();
                });
             }
-            else if(change === 1 || change === 2)
+            else if(change === 1)
             {
                if(fighter.side === 1)
                {
@@ -2358,21 +2052,6 @@ package animation.layer
                resolve();
             }
          });
-      }
-      
-      private function enableUClientBattleComposite(param1:MovieClip) : void
-      {
-         var target:Object = param1;
-         try
-         {
-            if(target != null && target["setUClientBattleCompositeMode"] is Function)
-            {
-               target["setUClientBattleCompositeMode"](true);
-            }
-         }
-         catch(ignored:*)
-         {
-         }
       }
       
       private function checkVersion(param1:int) : Boolean
@@ -2417,21 +2096,12 @@ package animation.layer
       
       private function onChild0Complete(param1:MovieClip, param2:Function) : void
       {
-         var handleEnterFrame:*;
          var pet:MovieClip = param1;
          var cb:Function = param2;
          var observed:MovieClip = null;
          var lastFrame:int = -1;
          var stalledTicks:int = 0;
-         if(isExternalIdleOnlyPose(pet))
-         {
-            setTimeout(function():void
-            {
-               cb();
-            },0);
-            return;
-         }
-         handleEnterFrame = function(param1:Event):void
+         var handleEnterFrame:* = function(param1:Event):void
          {
             var action:MovieClip = observed;
             if(action == null || action.parent == null)

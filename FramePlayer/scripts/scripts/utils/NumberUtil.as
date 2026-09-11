@@ -48,7 +48,7 @@ package utils
       public static function random(param1:Number, param2:Number = 0, param3:Number = 1) : Number
       {
          var _loc5_:Number = NaN;
-         var _loc4_:* = NaN;
+         var _loc4_:Number = NaN;
          if(param1 > param2)
          {
             _loc4_ = param1;

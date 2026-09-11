@@ -25,7 +25,6 @@ package animation.layer
       
       public function playStart(param1:FrameData, param2:Function) : void
       {
-         var version:int;
          var loadUrls:Vector.<String>;
          var loadTasks:Array;
          var url:String;
@@ -42,7 +41,7 @@ package animation.layer
                var cb:Function = param1;
                var ready:* = function():void
                {
-                  loadedCount++;
+                  loadedCount = loadedCount + 1;
                   updateProgress(Math.min(100 * loadedCount / loadUrls.length,99));
                   cb();
                };
@@ -67,8 +66,8 @@ package animation.layer
                _loadingBar.updateProgress(param1);
             }
          };
-         _version++;
-         version = _version;
+         _version = _version + 1;
+         var version:int = _version;
          removeLoadingBar();
          _loadingBar = new ArenaLoadingBar();
          _loadingBar.initData(frame.data.left,frame.data.right,frame.start.tips);

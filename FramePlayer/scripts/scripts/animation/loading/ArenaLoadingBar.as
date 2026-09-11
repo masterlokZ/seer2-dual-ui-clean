@@ -151,7 +151,7 @@ package animation.loading
          }
          else if(this._curIndex + 1 < this._tipList.length)
          {
-            _loc1_ = uint(this._curIndex + 1);
+            _loc1_ = this._curIndex + 1;
             this._curIndex = _loc1_;
             this.updateTxt();
          }

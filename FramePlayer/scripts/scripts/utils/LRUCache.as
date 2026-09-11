@@ -29,7 +29,7 @@ package utils
       
       public function get(param1:*) : *
       {
-         var _loc3_:String = param1;
+         var _loc3_:String = String(param1);
          var _loc2_:CacheNode = _cache[_loc3_];
          if(_loc2_ != null)
          {
@@ -43,7 +43,7 @@ package utils
       {
          var _loc5_:CacheNode = null;
          var _loc4_:CacheNode = null;
-         var _loc6_:String = param1;
+         var _loc6_:String = String(param1);
          var _loc3_:CacheNode = _cache[_loc6_];
          if(_loc3_ != null)
          {
@@ -56,29 +56,29 @@ package utils
             if(_size >= _capacity)
             {
                _loc4_ = removeTail();
-               delete _cache[_loc4_.key];
-               _size--;
+               delete _cache[String(_loc4_.key)];
+               _size = _size - 1;
             }
             _cache[_loc6_] = _loc5_;
             addToHead(_loc5_);
-            _size++;
+            _size = _size + 1;
          }
       }
       
       public function has(param1:*) : Boolean
       {
-         return _cache[param1] != null;
+         return _cache[String(param1)] != null;
       }
       
       public function remove(param1:*) : Boolean
       {
-         var _loc3_:String = param1;
+         var _loc3_:String = String(param1);
          var _loc2_:CacheNode = _cache[_loc3_];
          if(_loc2_ != null)
          {
             removeNode(_loc2_);
             delete _cache[_loc3_];
-            _size--;
+            _size = _size - 1;
             return true;
          }
          return false;
@@ -113,8 +113,8 @@ package utils
          while(_size > _capacity)
          {
             _loc2_ = removeTail();
-            delete _cache[_loc2_.key];
-            _size--;
+            delete _cache[String(_loc2_.key)];
+            _size = _size - 1;
          }
       }
       
@@ -243,7 +243,7 @@ package utils
          var _loc1_:CacheNode = _head.next;
          while(_loc1_ !== _tail)
          {
-            _loc2_.push(_loc1_.key + ":" + _loc1_.value);
+            _loc2_.push(String(_loc1_.key) + ":" + String(_loc1_.value));
             _loc1_ = _loc1_.next;
          }
          return "[LRUCache size=" + _size + "/" + _capacity + " items={" + _loc2_.join(", ") + "}]";

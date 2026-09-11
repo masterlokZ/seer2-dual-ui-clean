@@ -42,7 +42,7 @@ package utils.ds
          }
          var _loc2_:* = _content[param1];
          delete _content[param1];
-         --_length;
+         _length = _length - 1;
          return _loc2_;
       }
       
@@ -129,7 +129,7 @@ package utils.ds
          }
          if(!(param1 in _content))
          {
-            ++_length;
+            _length = _length + 1;
          }
          _loc3_ = getValue(param1);
          _content[param1] = param2;

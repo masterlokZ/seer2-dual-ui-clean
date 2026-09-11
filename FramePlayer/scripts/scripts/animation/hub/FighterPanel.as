@@ -59,7 +59,7 @@ package animation.hub
             fighterDisplay.addEventListener("mouseOut",onMouseOut);
             this._fighterDisplayVec.push(fighterDisplay);
             addChild(fighterDisplay);
-            i++;
+            i = i + 1;
          }
          this._tip = new FighterTip();
       }

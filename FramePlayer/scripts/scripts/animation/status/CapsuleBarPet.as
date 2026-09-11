@@ -53,7 +53,7 @@ package animation.status
                _loc5_.scaleX *= -1;
                _loc5_.x += _loc5_.width;
             }
-            i++;
+            i = i + 1;
          }
          i = 0;
          this._backVec = new Vector.<MovieClip>();
@@ -77,7 +77,7 @@ package animation.status
                });
             })(i);
             addChild(_loc5_);
-            i++;
+            i = i + 1;
          }
          this._petIconVec = new Vector.<PetIconDisplay>();
          _loc4_ = null;
@@ -92,7 +92,7 @@ package animation.status
             _loc4_.mouseEnabled = _loc4_.mouseChildren = false;
             _loc4_.visible = false;
             addChild(_loc4_);
-            i++;
+            i = i + 1;
          }
          this.visible = false;
       }
@@ -177,7 +177,7 @@ package animation.status
                this._backVec[idx].visible = false;
                icon.visible = false;
             }
-            idx++;
+            idx = idx + 1;
          }
       }
       
