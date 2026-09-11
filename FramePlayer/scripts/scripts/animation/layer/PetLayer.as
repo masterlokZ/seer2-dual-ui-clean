@@ -512,9 +512,10 @@ package animation.layer
             status = IDLE;
             terminal = false;
          }
-         if(terminal && isExternalHurtLabel(pet.currentLabel))
+         var timeline:MovieClip = getEffectiveTimeline(pet);
+         if(terminal && isExternalHurtLabel(timeline != null ? timeline.currentLabel : pet.currentLabel))
          {
-            action = findExternalAction(pet);
+            action = findExternalAction(timeline != null ? timeline : pet);
             if(action != null && action.currentFrame >= action.totalFrames)
             {
                stopExternalAction(pet);
@@ -539,20 +540,20 @@ package animation.layer
          {
             return;
          }
-         if(status == IDLE && UClientUniversalBattleAdapter.supports(pet) && isExternalIdleLabel(pet.currentLabel) && isExternalIdleLabel(label) && externalActions[pet] == null && externalPendingActions[pet] == null)
+         if(status == IDLE && UClientUniversalBattleAdapter.supports(pet) && isExternalIdleLabel(timeline != null ? timeline.currentLabel : pet.currentLabel) && isExternalIdleLabel(label) && externalActions[pet] == null && externalPendingActions[pet] == null)
          {
             return;
          }
          stopExternalAction(pet);
          try
          {
-            pet.gotoAndStop(label);
+            getEffectiveTimeline(pet).gotoAndStop(label);
          }
          catch(ignored:*)
          {
             return;
          }
-         action = findExternalAction(pet);
+         action = findExternalAction(getEffectiveTimeline(pet));
          if(action == null)
          {
             scheduleExternalAction(pet,status,ownAction);
@@ -578,7 +579,7 @@ package animation.layer
             var action:MovieClip = null;
             pet.removeEventListener(Event.FRAME_CONSTRUCTED,handler);
             delete externalPendingActions[pet];
-            action = findExternalAction(pet);
+            action = findExternalAction(getEffectiveTimeline(pet));
             if(action != null)
             {
                applyExternalActionState(pet,status,ownAction,action);
@@ -597,7 +598,8 @@ package animation.layer
          var ultimateAttackFallback:Boolean = isExternalUltimateAttackFallback(pet,status);
          var coverAction:Boolean = ownAction || ultimateAttackFallback;
          var continuousAttack:Boolean = status == "物理攻击" || status == "特殊攻击" || ultimateAttackFallback;
-         var terminalHurtFallback:Boolean = (status == "濒死" || status == "失败") && isExternalHurtLabel(pet.currentLabel);
+         var timeline:MovieClip = getEffectiveTimeline(pet);
+         var terminalHurtFallback:Boolean = (status == "濒死" || status == "失败") && isExternalHurtLabel(timeline != null ? timeline.currentLabel : pet.currentLabel);
          if(status == IDLE)
          {
             try
@@ -1465,50 +1467,69 @@ package animation.layer
          return false;
       }
       
+      private function getEffectiveTimeline(param1:MovieClip) : MovieClip
+      {
+         if(param1 == null)
+         {
+            return null;
+         }
+         if(param1.totalFrames <= 1 && (param1.currentLabels == null || param1.currentLabels.length == 0) && param1.numChildren > 0 && param1.getChildAt(0) is MovieClip)
+         {
+            var inner:MovieClip = param1.getChildAt(0) as MovieClip;
+            if(inner != null && (inner.totalFrames > 1 || (inner.currentLabels != null && inner.currentLabels.length > 0)))
+            {
+               return inner;
+            }
+         }
+         return param1;
+      }
+      
       private function isExternalCompactTimeline(param1:MovieClip) : Boolean
       {
-         if(param1 == null || findTimelineLabel(param1,["待机","物理攻击","属性攻击","特殊攻击","被打","必杀"]) != "")
+         var timeline:MovieClip = getEffectiveTimeline(param1);
+         if(timeline == null || findTimelineLabel(timeline,["待机","物理攻击","属性攻击","特殊攻击","被打","必杀"]) != "")
          {
             return false;
          }
-         return findTimelineLabel(param1,["attack","atk","attack1","sa","sa5","as5","attack5","cp","hidemove","hited","hurt","hit","add1","add2","add3","ultimate","ultra","power"]) != "" || findDedicatedMoveLabel(param1) != "";
+         return findTimelineLabel(timeline,["attack","atk","attack1","sa","sa5","as5","attack5","cp","hidemove","hited","hurt","hit","add1","add2","add3","ultimate","ultra","power"]) != "" || findDedicatedMoveLabel(timeline) != "";
       }
       
       private function resolveExternalLabel(param1:MovieClip, param2:String) : String
       {
          var dedicated:String = "";
+         var timeline:MovieClip = getEffectiveTimeline(param1);
          if(param2 == IDLE)
          {
-            return findTimelineLabel(param1,["idle","stand","wait","attack","atk","attack1"]);
+            return findTimelineLabel(timeline,["idle","stand","wait","attack","atk","attack1"]);
          }
          if(param2 == "物理攻击")
          {
-            return findTimelineLabel(param1,["attack","atk","attack1","normalAttack","skill"]);
+            return findTimelineLabel(timeline,["attack","atk","attack1","normalAttack","skill"]);
          }
          if(param2 == "属性攻击")
          {
-            return findTimelineLabel(param1,["cp","attribute","support","skill","sa","attack","atk"]);
+            return findTimelineLabel(timeline,["cp","attribute","support","skill","sa","attack","atk"]);
          }
          if(param2 == "特殊攻击")
          {
-            return findTimelineLabel(param1,["sa","special","magic","skill","attack","atk"]);
+            return findTimelineLabel(timeline,["sa","special","magic","skill","attack","atk"]);
          }
          if(FighterActionType.superAtk().indexOf(param2) >= 0)
          {
-            dedicated = findDedicatedMoveLabel(param1);
-            return dedicated != "" ? dedicated : findTimelineLabel(param1,["hidemove","sa5","as5","attack5","ultimate","ultra","power","attack","atk","attack1","normalAttack","special","sa"]);
+            dedicated = findDedicatedMoveLabel(timeline);
+            return dedicated != "" ? dedicated : findTimelineLabel(timeline,["hidemove","sa5","as5","attack5","ultimate","ultra","power","attack","atk","attack1","normalAttack","special","sa"]);
          }
          if(FighterActionType.hurt().indexOf(param2) >= 0)
          {
-            return findTimelineLabel(param1,["hited","hurt","hit","beHit","damage","attack","atk"]);
+            return findTimelineLabel(timeline,["hited","hurt","hit","beHit","damage","attack","atk"]);
          }
          if(param2 == "濒死" || param2 == "失败")
          {
-            return findTimelineLabel(param1,["lose","lost","failure","fail","defeat","dead","death","dying","lowhp","weak","hited","hurt","hit","beHit","damage"]);
+            return findTimelineLabel(timeline,["lose","lost","failure","fail","defeat","dead","death","dying","lowhp","weak","hited","hurt","hit","beHit","damage"]);
          }
          if(param2 == "胜利")
          {
-            return findTimelineLabel(param1,["win","victory"]);
+            return findTimelineLabel(timeline,["win","victory"]);
          }
          return "";
       }
@@ -1518,9 +1539,14 @@ package animation.layer
          var item:Object = null;
          var candidate:String = null;
          var actual:String = "";
+         var target:MovieClip = getEffectiveTimeline(param1);
+         if(target == null || target.currentLabels == null)
+         {
+            return "";
+         }
          for each(candidate in param2)
          {
-            for each(item in param1.currentLabels)
+            for each(item in target.currentLabels)
             {
                actual = item == null || item.name == null ? "" : item.name;
                if(actual.toLowerCase() == candidate.toLowerCase())
@@ -1536,12 +1562,13 @@ package animation.layer
       {
          var item:Object = null;
          var name:String = "";
-         if(param1 == null)
+         var timeline:MovieClip = getEffectiveTimeline(param1);
+         if(timeline == null)
          {
             return "";
          }
          var moveLabels:Array = [];
-         for each(item in param1.currentLabels)
+         for each(item in timeline.currentLabels)
          {
             name = item == null || item.name == null ? "" : item.name.toLowerCase();
             if(name.indexOf("moves_") == 0 || name.indexOf("add") == 0 || name.indexOf("attack") == 0 && name != "attack" && name != "atk" || /^(?:sa5|as5|attack5|hidemove|ultimate|ultra|power)\d*$/i.test(name))
@@ -1557,7 +1584,7 @@ package animation.layer
          {
             return moveLabels[0].name;
          }
-         return pickBestDedicatedMove(param1,moveLabels);
+         return pickBestDedicatedMove(timeline,moveLabels);
       }
       
       private function pickBestDedicatedMove(param1:MovieClip, param2:Array) : String
@@ -1573,20 +1600,21 @@ package animation.layer
          var bestScore:int;
          var candScore:int;
          var item:Object = null;
-         var physLabel:String = findTimelineLabel(param1,["attack","atk","attack1"]);
-         var specLabel:String = findTimelineLabel(param1,["sa","special","magic"]);
-         var propLabel:String = findTimelineLabel(param1,["cp","attribute","support","skill"]);
-         var currentF:int = param1.currentFrame;
-         var physChild:MovieClip = getActionChildAtLabel(param1,physLabel);
-         var specChild:MovieClip = getActionChildAtLabel(param1,specLabel);
-         var propChild:MovieClip = getActionChildAtLabel(param1,propLabel);
+         var target:MovieClip = getEffectiveTimeline(param1);
+         var physLabel:String = findTimelineLabel(target,["attack","atk","attack1"]);
+         var specLabel:String = findTimelineLabel(target,["sa","special","magic"]);
+         var propLabel:String = findTimelineLabel(target,["cp","attribute","support","skill"]);
+         var currentF:int = target.currentFrame;
+         var physChild:MovieClip = getActionChildAtLabel(target,physLabel);
+         var specChild:MovieClip = getActionChildAtLabel(target,specLabel);
+         var propChild:MovieClip = getActionChildAtLabel(target,propLabel);
          var distinct:Array = [];
          var allCandidates:Array = [];
          for each(item in param2)
          {
             if(item != null)
             {
-               mChild = getActionChildAtFrame(param1,int(item.frame));
+               mChild = getActionChildAtFrame(target,int(item.frame));
                mFrames = mChild != null ? mChild.totalFrames : 1;
                entry = {
                   "label":item.name,
@@ -1615,7 +1643,7 @@ package animation.layer
          }
          try
          {
-            param1.gotoAndStop(currentF);
+            target.gotoAndStop(currentF);
          }
          catch(ignored:*)
          {
@@ -1653,43 +1681,46 @@ package animation.layer
       
       private function getActionChildAtLabel(param1:MovieClip, param2:String) : MovieClip
       {
-         if(!param2 || param1 == null)
+         var target:MovieClip = getEffectiveTimeline(param1);
+         if(!param2 || target == null)
          {
             return null;
          }
-         var f:int = findFrameForLabel(param1,param2);
+         var f:int = findFrameForLabel(target,param2);
          if(f <= 0)
          {
             return null;
          }
-         return getActionChildAtFrame(param1,f);
+         return getActionChildAtFrame(target,f);
       }
       
       private function getActionChildAtFrame(param1:MovieClip, param2:int) : MovieClip
       {
-         if(param2 <= 0 || param1 == null)
+         var target:MovieClip = getEffectiveTimeline(param1);
+         if(param2 <= 0 || target == null)
          {
             return null;
          }
          try
          {
-            param1.gotoAndStop(param2);
+            target.gotoAndStop(param2);
          }
          catch(e:*)
          {
             return null;
          }
-         return findExternalAction(param1);
+         return findExternalAction(target);
       }
       
       private function findFrameForLabel(param1:MovieClip, param2:String) : int
       {
          var item:Object = null;
-         if(param1 == null || param1.currentLabels == null)
+         var target:MovieClip = getEffectiveTimeline(param1);
+         if(target == null || target.currentLabels == null)
          {
             return 0;
          }
-         for each(item in param1.currentLabels)
+         for each(item in target.currentLabels)
          {
             if(item != null && item.name != null && String(item.name).toLowerCase() == param2.toLowerCase())
             {
@@ -1765,7 +1796,7 @@ package animation.layer
          }
          try
          {
-            bounds = pet.getBounds(pet);
+            bounds = getEffectiveTimeline(pet).getBounds(pet);
             if(bounds == null || bounds.width <= 0 || bounds.height <= 0)
             {
                scheduleExternalPlacement(pet,fighter);

@@ -417,23 +417,38 @@ package com.taomee.seer2.app.arena
          {
             return false;
          }
+         var timeline:MovieClip = this.getEffectiveTimeline(this._externalIdleRoot);
          label = this.resolveExternalLabel("待机");
          try
          {
-            this._externalIdleRoot.gotoAndStop(label == "" ? this._externalNeutralRootFrame : label);
+            if(timeline != null)
+            {
+               timeline.gotoAndStop(label == "" ? this._externalNeutralRootFrame : label);
+            }
+            if(this._externalIdleRoot !== timeline)
+            {
+               this._externalIdleRoot.gotoAndStop(1);
+            }
          }
          catch(labelError:*)
          {
             try
             {
-               this._externalIdleRoot.gotoAndStop(this._externalNeutralRootFrame);
+               if(timeline != null)
+               {
+                  timeline.gotoAndStop(this._externalNeutralRootFrame);
+               }
+               if(this._externalIdleRoot !== timeline)
+               {
+                  this._externalIdleRoot.gotoAndStop(1);
+               }
             }
             catch(frameError:*)
             {
                return false;
             }
          }
-         this._externalIdleAction = this.getActionChildFrom(this._externalIdleRoot);
+         this._externalIdleAction = this.getActionChildFrom(timeline);
          if(this._externalIdleAction == null)
          {
             return false;
@@ -1040,12 +1055,14 @@ package com.taomee.seer2.app.arena
       
       public function get totalFrameNum() : uint
       {
-         return this._mc == null ? 0 : this._mc.totalFrames;
+         var timeline:MovieClip = this.getEffectiveTimeline(this._mc);
+         return timeline == null ? 0 : timeline.totalFrames;
       }
       
       public function get currentFrameIndex() : uint
       {
-         return this._mc == null ? 0 : this._mc.currentFrame;
+         var timeline:MovieClip = this.getEffectiveTimeline(this._mc);
+         return timeline == null ? 0 : timeline.currentFrame;
       }
       
       public function get currentFrameLabel() : String
@@ -1054,19 +1071,21 @@ package com.taomee.seer2.app.arena
          {
             return this._requestedLabel;
          }
-         return this._mc == null ? "" : this._mc.currentFrameLabel;
+         var timeline:MovieClip = this.getEffectiveTimeline(this._mc);
+         return timeline == null ? "" : timeline.currentFrameLabel;
       }
       
       public function play() : void
       {
-         if(this._mc != null)
+         var timeline:MovieClip = this.getEffectiveTimeline(this._mc);
+         if(timeline != null)
          {
             if(this._externalCompactTimeline && this._mode == MODE_EXTERNAL_IDLE && (this._externalForceIdleInstance || !this.hasExternalIdleLabel()))
             {
                this.showExternalIdleInstance();
                return;
             }
-            this._mc.play();
+            timeline.play();
          }
       }
       
@@ -1082,7 +1101,12 @@ package com.taomee.seer2.app.arena
             {
             }
          }
-         if(this._mc != null)
+         var timeline:MovieClip = this.getEffectiveTimeline(this._mc);
+         if(timeline != null)
+         {
+            timeline.stop();
+         }
+         if(this._mc != null && this._mc !== timeline)
          {
             this._mc.stop();
          }
@@ -1090,17 +1114,19 @@ package com.taomee.seer2.app.arena
       
       public function gotoAndPlay(param1:uint) : void
       {
-         if(this._mc != null)
+         var timeline:MovieClip = this.getEffectiveTimeline(this._mc);
+         if(timeline != null)
          {
-            this._mc.gotoAndPlay(param1);
+            timeline.gotoAndPlay(param1);
          }
       }
       
       public function gotoAndStop(param1:uint) : void
       {
-         if(this._mc != null)
+         var timeline:MovieClip = this.getEffectiveTimeline(this._mc);
+         if(timeline != null)
          {
-            this._mc.gotoAndStop(param1);
+            timeline.gotoAndStop(param1);
          }
       }
       
@@ -1109,11 +1135,29 @@ package com.taomee.seer2.app.arena
          return this.findLabel([param1]) != "";
       }
       
+      private function getEffectiveTimeline(param1:MovieClip) : MovieClip
+      {
+         if(param1 == null)
+         {
+            return null;
+         }
+         if(param1.totalFrames <= 1 && (param1.currentLabels == null || param1.currentLabels.length == 0) && param1.numChildren > 0 && param1.getChildAt(0) is MovieClip)
+         {
+            var inner:MovieClip = param1.getChildAt(0) as MovieClip;
+            if(inner != null && (inner.totalFrames > 1 || (inner.currentLabels != null && inner.currentLabels.length > 0)))
+            {
+               return inner;
+            }
+         }
+         return param1;
+      }
+      
       private function findLabel(param1:Array) : String
       {
          var candidate:String = null;
          var frameLabel:FrameLabel = null;
-         if(this._mc == null || param1 == null)
+         var timeline:MovieClip = this.getEffectiveTimeline(this._mc);
+         if(timeline == null || param1 == null)
          {
             return "";
          }
@@ -1121,7 +1165,7 @@ package com.taomee.seer2.app.arena
          {
             if(candidate != null)
             {
-               for each(frameLabel in this._mc.currentLabels)
+               for each(frameLabel in timeline.currentLabels)
                {
                   if(frameLabel != null && frameLabel.name.toLowerCase() == candidate.toLowerCase())
                   {
@@ -1137,36 +1181,228 @@ package com.taomee.seer2.app.arena
       {
          var frameLabel:FrameLabel = null;
          var name:String = null;
-         if(this._mc == null)
+         var timeline:MovieClip = this.getEffectiveTimeline(this._mc);
+         if(timeline == null)
          {
             return "";
          }
-         for each(frameLabel in this._mc.currentLabels)
+         var moveLabels:Array = [];
+         for each(frameLabel in timeline.currentLabels)
          {
             if(frameLabel != null)
             {
                name = frameLabel.name == null ? "" : frameLabel.name.toLowerCase();
-               if(name.indexOf("moves_") == 0)
+               if(name.indexOf("moves_") == 0 || name.indexOf("add") == 0 || (name.indexOf("attack") == 0 && name != "attack" && name != "atk") || /^(?:sa5|as5|attack5|hidemove|ultimate|ultra|power)\d*$/i.test(name))
                {
-                  return frameLabel.name;
+                  moveLabels.push(frameLabel);
                }
             }
          }
-         return "";
+         if(moveLabels.length == 0)
+         {
+            return "";
+         }
+         if(moveLabels.length == 1)
+         {
+            return (moveLabels[0] as FrameLabel).name;
+         }
+         return this.pickBestDedicatedMove(moveLabels);
+      }
+      
+      private function pickBestDedicatedMove(param1:Array) : String
+      {
+         var mChild:MovieClip = null;
+         var mFrames:int = 0;
+         var item:Object = null;
+         var isDup:Boolean = false;
+         var pool:Array = null;
+         var best:Object = null;
+         var physF:int = 0;
+         var candidate:Object = null;
+         var bestScore:int = 0;
+         var candScore:int = 0;
+         var fl:FrameLabel = null;
+         var timeline:MovieClip = this.getEffectiveTimeline(this._mc);
+         if(timeline == null)
+         {
+            return "";
+         }
+         var physLabel:String = this.findLabel(["attack","atk","attack1"]);
+         var specLabel:String = this.findLabel(["sa","special","magic"]);
+         var propLabel:String = this.findLabel(["cp","attribute","support","skill"]);
+         var currentF:int = timeline.currentFrame;
+         var physChild:MovieClip = this.getActionChildAtLabel(physLabel);
+         var specChild:MovieClip = this.getActionChildAtLabel(specLabel);
+         var propChild:MovieClip = this.getActionChildAtLabel(propLabel);
+         var distinct:Array = [];
+         var allCandidates:Array = [];
+         for each(fl in param1)
+         {
+            if(fl != null)
+            {
+               mChild = this.getActionChildAtFrame(fl.frame);
+               mFrames = mChild != null ? mChild.totalFrames : 1;
+               item = {
+                  "label":fl.name,
+                  "child":mChild,
+                  "frames":mFrames
+               };
+               allCandidates.push(item);
+               isDup = false;
+               if(physChild != null && this.isDuplicateClip(mChild,physChild))
+               {
+                  isDup = true;
+               }
+               if(specChild != null && this.isDuplicateClip(mChild,specChild))
+               {
+                  isDup = true;
+               }
+               if(propChild != null && this.isDuplicateClip(mChild,propChild))
+               {
+                  isDup = true;
+               }
+               if(!isDup)
+               {
+                  distinct.push(item);
+               }
+            }
+         }
+         try
+         {
+            timeline.gotoAndStop(currentF);
+         }
+         catch(ignored:*)
+         {
+         }
+         pool = distinct.length > 0 ? distinct : allCandidates;
+         if(pool.length == 0)
+         {
+            return (param1[0] as FrameLabel).name;
+         }
+         best = pool[0];
+         physF = physChild != null ? physChild.totalFrames : 0;
+         for each(candidate in pool)
+         {
+            bestScore = this.scoreMoveCandidate(String(best.label),int(best.frames),physF);
+            candScore = this.scoreMoveCandidate(String(candidate.label),int(candidate.frames),physF);
+            if(candScore > bestScore)
+            {
+               best = candidate;
+            }
+         }
+         return String(best.label);
+      }
+      
+      private function scoreMoveCandidate(param1:String, param2:int, physFrames:int = 0) : int
+      {
+         var idMatch:Array = param1.match(/moves?_?(\d+)/i);
+         var moveId:int = idMatch != null && idMatch.length > 1 ? int(idMatch[1]) : 0;
+         var isAttack:Boolean = moveId == 0 || moveId >= 30000;
+         if(moveId == 0 && physFrames > 0 && param2 < physFrames)
+         {
+            return param2;
+         }
+         return (isAttack ? 1000000 : 0) + param2;
+      }
+      
+      private function getActionChildAtLabel(param1:String) : MovieClip
+      {
+         var timeline:MovieClip = this.getEffectiveTimeline(this._mc);
+         if(param1 == "" || timeline == null)
+         {
+            return null;
+         }
+         var f:int = this.findFrameForLabel(param1);
+         if(f <= 0)
+         {
+            return null;
+         }
+         return this.getActionChildAtFrame(f);
+      }
+      
+      private function getActionChildAtFrame(param1:int) : MovieClip
+      {
+         var timeline:MovieClip = this.getEffectiveTimeline(this._mc);
+         if(param1 <= 0 || timeline == null)
+         {
+            return null;
+         }
+         try
+         {
+            timeline.gotoAndStop(param1);
+         }
+         catch(e:*)
+         {
+            return null;
+         }
+         return this.getActionChildFrom(timeline);
+      }
+      
+      private function findFrameForLabel(param1:String) : int
+      {
+         var fl:FrameLabel = null;
+         var timeline:MovieClip = this.getEffectiveTimeline(this._mc);
+         if(timeline == null)
+         {
+            return 0;
+         }
+         for each(fl in timeline.currentLabels)
+         {
+            if(fl != null && fl.name != null && fl.name.toLowerCase() == param1.toLowerCase())
+            {
+               return fl.frame;
+            }
+         }
+         return 0;
+      }
+      
+      private function isDuplicateClip(param1:MovieClip, param2:MovieClip) : Boolean
+      {
+         if(param1 == null || param2 == null)
+         {
+            return false;
+         }
+         if(param1 === param2)
+         {
+            return true;
+         }
+         var cls1:String = getQualifiedClassName(param1);
+         var cls2:String = getQualifiedClassName(param2);
+         if(cls1 != "flash.display::MovieClip" && cls2 != "flash.display::MovieClip")
+         {
+            return cls1 == cls2;
+         }
+         if(param1.totalFrames != param2.totalFrames || param1.totalFrames <= 1)
+         {
+            return false;
+         }
+         var b1:Rectangle = param1.getBounds(param1);
+         var b2:Rectangle = param2.getBounds(param2);
+         if(Math.abs(b1.width - b2.width) > 2 || Math.abs(b1.height - b2.height) > 2)
+         {
+            return false;
+         }
+         return param1.numChildren == param2.numChildren;
       }
       
       private function isExternalTimeline() : Boolean
       {
+         var timeline:MovieClip = this.getEffectiveTimeline(this._mc);
+         if(timeline == null)
+         {
+            return false;
+         }
          if(this.findLabel(["待机","物理攻击","属性攻击","特殊攻击","被打","必杀"]) != "")
          {
             return false;
          }
-         return this.findLabel(["attack","atk","attack1","sa","sa5","cp","hidemove","hited","hurt","hit","idle","stand","special","skill","ultimate","ultra","power"]) != "";
+         return this.findLabel(["attack","atk","attack1","sa","sa5","as5","attack5","cp","hidemove","hited","hurt","hit","idle","stand","special","skill","ultimate","ultra","power","add1","add2","add3"]) != "" || this.findDedicatedMoveLabel() != "";
       }
       
       private function isExternalHurtAction() : Boolean
       {
-         var label:String = (this._currentLabel || (this._mc == null ? "" : this._mc.currentLabel)).toLowerCase();
+         var timeline:MovieClip = this.getEffectiveTimeline(this._mc);
+         var label:String = (this._currentLabel || (timeline == null ? "" : timeline.currentLabel)).toLowerCase();
          return label == "hited" || label == "hurt" || label == "hit" || label == "behit" || label == "damage";
       }
       
@@ -1208,7 +1444,15 @@ package com.taomee.seer2.app.arena
          }
          try
          {
-            this._mc.gotoAndStop(label);
+            var statusTimeline:MovieClip = this.getEffectiveTimeline(this._mc);
+            if(statusTimeline != null)
+            {
+               statusTimeline.gotoAndStop(label);
+            }
+            if(this._mc !== statusTimeline)
+            {
+               this._mc.gotoAndStop(1);
+            }
             action = this.getActionChild();
             if(action != null)
             {
@@ -1326,9 +1570,10 @@ package com.taomee.seer2.app.arena
          {
             return this.findLabel(["idle","stand","wait","attack","atk","attack1"]);
          }
-         if(this._mc != null && this._mc.currentLabels.length > 0)
+         var timeline:MovieClip = this.getEffectiveTimeline(this._mc);
+         if(timeline != null && timeline.currentLabels != null && timeline.currentLabels.length > 0)
          {
-            return this._mc.currentLabels[0].name;
+            return timeline.currentLabels[0].name;
          }
          return "";
       }
@@ -1368,6 +1613,10 @@ package com.taomee.seer2.app.arena
          if(this._mc == null)
          {
             return;
+         }
+         if(!this._externalCompactTimeline)
+         {
+            this._externalCompactTimeline = this.isExternalTimeline();
          }
          if(!this._externalCompactTimeline)
          {
@@ -1438,20 +1687,44 @@ package com.taomee.seer2.app.arena
          this._mc.addEventListener(Event.FRAME_CONSTRUCTED,this.onFrameConstructed);
          try
          {
-            if(this._currentLabel == "")
+            var actionTimeline:MovieClip = this.getEffectiveTimeline(this._mc);
+            if(actionTimeline != null)
             {
-               this._mc.gotoAndStop(1);
+               actionTimeline.visible = true;
+               if(this._currentLabel == "")
+               {
+                  actionTimeline.gotoAndStop(1);
+               }
+               else
+               {
+                  actionTimeline.gotoAndStop(this._currentLabel);
+               }
             }
-            else
+            if(this._mc !== actionTimeline)
             {
-               this._mc.gotoAndStop(this._currentLabel);
+               this._mc.visible = true;
+               try
+               {
+                  this._mc.gotoAndStop(1);
+               }
+               catch(frameError:*)
+               {
+               }
             }
          }
          catch(labelError:*)
          {
             try
             {
-               this._mc.gotoAndStop(1);
+               var fallbackTimeline:MovieClip = this.getEffectiveTimeline(this._mc);
+               if(fallbackTimeline != null)
+               {
+                  fallbackTimeline.gotoAndStop(1);
+               }
+               if(this._mc !== fallbackTimeline)
+               {
+                  this._mc.gotoAndStop(1);
+               }
             }
             catch(frameError:*)
             {
@@ -1475,28 +1748,8 @@ package com.taomee.seer2.app.arena
       
       private function getActionChild() : MovieClip
       {
-         var child:MovieClip = null;
-         var index:int = 0;
-         if(this._mc == null)
-         {
-            return null;
-         }
-         try
-         {
-            while(index < this._mc.numChildren)
-            {
-               child = this._mc.getChildAt(index) as MovieClip;
-               if(child != null)
-               {
-                  return child;
-               }
-               index++;
-            }
-         }
-         catch(ignored:*)
-         {
-         }
-         return null;
+         var timeline:MovieClip = this.getEffectiveTimeline(this._mc);
+         return this.getActionChildFrom(timeline);
       }
       
       private function getDirectMovieChild(param1:MovieClip) : MovieClip
@@ -1650,13 +1903,21 @@ package com.taomee.seer2.app.arena
          referenceLabel = this.findLabel(["idle","stand","wait","attack","atk","attack1"]);
          try
          {
-            if(referenceLabel == "")
+            var normTimeline:MovieClip = this.getEffectiveTimeline(this._mc);
+            if(normTimeline != null)
+            {
+               if(referenceLabel == "")
+               {
+                  normTimeline.gotoAndStop(1);
+               }
+               else
+               {
+                  normTimeline.gotoAndStop(referenceLabel);
+               }
+            }
+            if(this._mc !== normTimeline)
             {
                this._mc.gotoAndStop(1);
-            }
-            else
-            {
-               this._mc.gotoAndStop(referenceLabel);
             }
          }
          catch(ignored:*)
@@ -2459,7 +2720,23 @@ package com.taomee.seer2.app.arena
             this._mode = MODE_EXTERNAL_STATIC_ENTRY;
             try
             {
-               this._mc.gotoAndStop(this._currentLabel == "" ? 1 : this._currentLabel);
+               var entryTimeline:MovieClip = this.getEffectiveTimeline(this._mc);
+               if(entryTimeline != null)
+               {
+                  entryTimeline.visible = true;
+                  entryTimeline.gotoAndStop(this._currentLabel == "" ? 1 : this._currentLabel);
+               }
+               if(this._mc !== entryTimeline)
+               {
+                  this._mc.visible = true;
+                  try
+                  {
+                     this._mc.gotoAndStop(1);
+                  }
+                  catch(entryRedirectError:*)
+                  {
+                  }
+               }
             }
             catch(entryRedirectError:*)
             {
@@ -2610,7 +2887,23 @@ package com.taomee.seer2.app.arena
          this._mode = MODE_EXTERNAL_IDLE;
          try
          {
-            this._mc.gotoAndStop(this._currentLabel == "" ? 1 : this._currentLabel);
+            var fallbackStatusTimeline:MovieClip = this.getEffectiveTimeline(this._mc);
+            if(fallbackStatusTimeline != null)
+            {
+               fallbackStatusTimeline.visible = true;
+               fallbackStatusTimeline.gotoAndStop(this._currentLabel == "" ? 1 : this._currentLabel);
+            }
+            if(this._mc !== fallbackStatusTimeline)
+            {
+               this._mc.visible = true;
+               try
+               {
+                  this._mc.gotoAndStop(1);
+               }
+               catch(ignored:*)
+               {
+               }
+            }
          }
          catch(ignored:*)
          {
@@ -3935,13 +4228,29 @@ package com.taomee.seer2.app.arena
             this._currentLabel = label;
             try
             {
-               if(label == "")
+               var idleTimeline:MovieClip = this.getEffectiveTimeline(this._mc);
+               if(idleTimeline != null)
                {
-                  this._mc.gotoAndStop(1);
+                  idleTimeline.visible = true;
+                  if(label == "")
+                  {
+                     idleTimeline.gotoAndStop(1);
+                  }
+                  else
+                  {
+                     idleTimeline.gotoAndStop(label);
+                  }
                }
-               else
+               if(this._mc !== idleTimeline)
                {
-                  this._mc.gotoAndStop(label);
+                  this._mc.visible = true;
+                  try
+                  {
+                     this._mc.gotoAndStop(1);
+                  }
+                  catch(e:*)
+                  {
+                  }
                }
             }
             catch(ignored:*)
