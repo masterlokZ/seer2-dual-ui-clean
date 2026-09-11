@@ -461,6 +461,14 @@ package animation.layer
             updateExternalStatus(pet,label);
             return;
          }
+         if(label == "变身效果" && !Utils.hasLabel(pet,label))
+         {
+            var altTransform:String = findTimelineLabel(pet,["变身效果","变身","transform","morph","change","appear","present","show"]);
+            if(altTransform != "")
+            {
+               label = altTransform;
+            }
+         }
          if(!Utils.hasLabel(pet,label))
          {
             if(FighterActionType.atk().indexOf(label) >= 0)
@@ -1686,12 +1694,12 @@ package animation.layer
               pet.scaleX = fighter.scaleX * fitScale;
               pet.scaleY = fighter.scaleY * fitScale;
               
-              var groundLineY:Number = fighter.y + 382.0;
+              var groundLineY:Number = fighter.y + 420.0;
               var targetCenterX:Number = fighter.x + EXTERNAL_TARGET_CENTER_X * fighter.scaleX;
               centerX = bounds.x + bounds.width * 0.5;
               bottom = bounds.y + bounds.height;
               pet.x = targetCenterX - centerX * fitScale * fighter.scaleX + customOffsetX * fighter.scaleX;
-              pet.y = groundLineY - bottom * fitScale * fighter.scaleY + customOffsetY * fighter.scaleY;
+              pet.y = groundLineY - bottom * fitScale * fighter.scaleY + customOffsetY;
               externalPlaced[pet] = true;
               delete externalPlacementAttempts[pet];
            }
@@ -1907,21 +1915,38 @@ package animation.layer
             first = true;
             exist = fighter.pet;
             var canTransform:Boolean = exist != null && (Utils.hasLabel(exist,"变身效果") || findTimelineLabel(exist,["变身效果","变身","transform","morph","change","appear","present","show"]) != "");
-            if(change === 2 && exist && canTransform)
+            if(change === 2)
             {
-               setChildIndex(exist,3);
-               updateStatus(exist,"变身效果",version);
-               onChild0Complete(exist,function():void
+               if(exist && canTransform)
                {
-                  if(!checkVersion(version))
+                  var transformDone:Boolean = false;
+                  var finishTransform:Function = function():void
                   {
+                     if(transformDone)
+                     {
+                        return;
+                     }
+                     transformDone = true;
+                     if(!checkVersion(version))
+                     {
+                        resolve();
+                        return;
+                     }
+                     twiceWillRemove(exist);
+                     applyPet(exist,false);
                      resolve();
-                     return;
-                  }
+                  };
+                  setChildIndex(exist,3);
+                  updateStatus(exist,"变身效果",version);
+                  onChild0Complete(exist,finishTransform);
+                  setTimeout(finishTransform,2000);
+               }
+               else
+               {
                   twiceWillRemove(exist);
                   applyPet(exist,false);
                   resolve();
-               });
+               }
             }
             else if(change === 1)
             {
