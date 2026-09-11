@@ -274,16 +274,7 @@ package com.taomee.seer2.app.arena
             if(this._fighterInfo.isChangeStatus == 1)
             {
                this._changeFighterSide = param1;
-               if(this._fighterAnimation != null && this._fighterAnimation.hasTransformationAction())
-               {
-                  this.action = "变身效果";
-               }
-               else
-               {
-                  this.onDisapper(param1);
-                  this._fighterInfo.isChangeStatus = 0;
-                  this.dispatchActionEvent("actionEnd");
-               }
+               this.action = "变身效果";
             }
             else
             {
@@ -297,29 +288,12 @@ package com.taomee.seer2.app.arena
          }
          else if(param1 == 2)
          {
-            if(this._fighterInfo.isChangeStatus == 1)
-            {
-               this._changeFighterSide = param1;
-               if(this._fighterAnimation != null && this._fighterAnimation.hasTransformationAction())
-               {
-                  this.action = "变身效果";
-               }
-               else
-               {
-                  this.onDisapper(param1);
-                  this._fighterInfo.isChangeStatus = 0;
-                  this.dispatchActionEvent("actionEnd");
-               }
-            }
-            else
-            {
-               TweenLite.to(this,0.5,{
-                  "x":1160,
-                  "ease":Strong.easeIn,
-                  "onComplete":this.onDisapper,
-                  "onCompleteParams":[param1]
-               });
-            }
+            TweenLite.to(this,0.5,{
+               "x":1160,
+               "ease":Strong.easeIn,
+               "onComplete":this.onDisapper,
+               "onCompleteParams":[param1]
+            });
          }
       }
       

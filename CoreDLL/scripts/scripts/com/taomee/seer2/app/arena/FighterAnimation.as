@@ -6,7 +6,6 @@ package com.taomee.seer2.app.arena
    import com.taomee.seer2.app.arena.util.HitInfoConfig;
    import com.taomee.seer2.core.animation.IAnimation;
    import com.taomee.seer2.core.player.FighterMoviePlayer;
-   import com.taomee.seer2.core.scene.SceneManager;
    import com.taomee.seer2.core.utils.URLUtil;
    import flash.display.BitmapData;
    import flash.display.BlendMode;
@@ -263,45 +262,12 @@ package com.taomee.seer2.app.arena
       
       private var _externalForceIdleInstance:Boolean = false;
       
-      private var _externalIdleOnlyPose:Boolean = false;
-      
       public function FighterAnimation()
       {
          super();
          this.mouseChildren = false;
          this.mouseEnabled = false;
          this.addEventListener(EVT_END,this.blockNestedEndEvent,false,int.MAX_VALUE);
-      }
-      
-      public function get externalFitScale() : Number
-      {
-         return this._externalFitScale;
-      }
-      
-      public function setExternalFitScale(val:Number) : void
-      {
-         this._externalFitScale = val;
-         this.alignExternalCompactTimeline();
-      }
-      
-      public function get externalNormX() : Number
-      {
-         return this._externalNormalizationX;
-      }
-      
-      public function get externalNormY() : Number
-      {
-         return this._externalNormalizationY;
-      }
-      
-      public function get innerMcX() : Number
-      {
-         return this._mc ? this._mc.x : 0;
-      }
-      
-      public function get innerMcY() : Number
-      {
-         return this._mc ? this._mc.y : 0;
       }
       
       private function blockNestedEndEvent(param1:Event) : void
@@ -321,19 +287,12 @@ package com.taomee.seer2.app.arena
          {
             throw new Error("没有战斗精灵的素材资源！[" + this._fighterResourceId + "]");
          }
-         while(this.numChildren > 0)
-         {
-            this.removeChildAt(0);
-         }
          this._mc = param1;
-         this.enableUClientBattleComposite(this._mc);
          this._externalBaseX = this._mc.x;
          this._externalBaseY = this._mc.y;
          this._externalBaseScaleX = this._mc.scaleX;
          this._externalBaseScaleY = this._mc.scaleY;
          this._externalFitScale = 1;
-         this._externalNormalizationReady = false;
-         this._externalNormalizationAttempts = 0;
          this._hostViewportNormalized = false;
          this._hostViewportProbeCount = 0;
          this._hostViewportMedianSum = 0;
@@ -341,7 +300,6 @@ package com.taomee.seer2.app.arena
          this._hostViewportTopSum = 0;
          this._externalEntryNormalizationReady = false;
          this._externalForceIdleInstance = false;
-         this._externalIdleOnlyPose = this.isExternalIdleOnlyTimeline();
          this._externalCompactTimeline = this.isExternalTimeline();
          if(this._externalCompactTimeline)
          {
@@ -349,7 +307,7 @@ package com.taomee.seer2.app.arena
             this._externalNeutralRootFrame = Math.max(1,this._mc.currentFrame);
          }
          addChild(this._mc);
-         if(this._externalCompactTimeline && !this._externalIdleOnlyPose)
+         if(this._externalCompactTimeline)
          {
             this._externalForceIdleInstance = this.shouldForceExternalIdleInstance();
             if(this._externalForceIdleInstance)
@@ -360,78 +318,10 @@ package com.taomee.seer2.app.arena
          }
          this.addEventListener(Event.ENTER_FRAME,this.probeHostViewport,false,0,true);
          this.alignExternalCompactTimeline();
-         if(this._externalCompactTimeline && !this._externalIdleOnlyPose)
-         {
-            this.createExternalIdleInstance();
-         }
+         this.createExternalIdleInstance();
          this._uclientAdapter = UClientUniversalBattleAdapter.attach(this._mc);
-         if(this._externalCompactTimeline && !this._externalIdleOnlyPose)
-         {
-            this.prewarmExternalAttackCover();
-         }
+         this.prewarmExternalAttackCover();
          this.preloadCustomSkill();
-         this.bindDefaultBattleBackdropHost();
-         this.addEventListener(Event.ADDED_TO_STAGE,this.onAddedToStageForBackdrop,false,0,true);
-      }
-      
-      private function onAddedToStageForBackdrop(event:Event) : void
-      {
-         this.bindDefaultBattleBackdropHost();
-      }
-      
-      private function bindDefaultBattleBackdropHost() : void
-      {
-         var host:Object = null;
-         try
-         {
-            if(SceneManager.active != null && SceneManager.active.mapModel != null && SceneManager.active.mapModel.content != null)
-            {
-               host = SceneManager.active.mapModel.content;
-            }
-            else if(this.parent != null && this.parent.parent != null)
-            {
-               host = this.parent.parent;
-            }
-         }
-         catch(ignored:*)
-         {
-            host = null;
-         }
-         if(host != null)
-         {
-            this.setUClientBattleBackdropHost(host);
-         }
-      }
-      
-      public function setUClientBattleBackdropHost(param1:Object) : Boolean
-      {
-         var target:Object = this._mc;
-         try
-         {
-            if(target != null && target["setUClientBattleBackdropHost"] is Function)
-            {
-               return Boolean(target["setUClientBattleBackdropHost"](param1,this._mc));
-            }
-         }
-         catch(ignored:*)
-         {
-         }
-         return false;
-      }
-      
-      private function enableUClientBattleComposite(param1:MovieClip) : void
-      {
-         var target:Object = param1;
-         try
-         {
-            if(target != null && target["setUClientBattleCompositeMode"] is Function)
-            {
-               target["setUClientBattleCompositeMode"](true);
-            }
-         }
-         catch(ignored:*)
-         {
-         }
       }
       
       private function createExternalIdleInstance() : void
@@ -1219,19 +1109,6 @@ package com.taomee.seer2.app.arena
          return this.findLabel([param1]) != "";
       }
       
-      public function hasTransformationAction() : Boolean
-      {
-         if(this.hasLabel("变身效果") || this.hasLabel("变身"))
-         {
-            return true;
-         }
-         if(this._externalCompactTimeline)
-         {
-            return this.findLabel(["transform","morph","change","appear","present","show"]) != "";
-         }
-         return false;
-      }
-      
       private function findLabel(param1:Array) : String
       {
          var candidate:String = null;
@@ -1264,237 +1141,27 @@ package com.taomee.seer2.app.arena
          {
             return "";
          }
-         var moveLabels:Array = [];
          for each(frameLabel in this._mc.currentLabels)
          {
             if(frameLabel != null)
             {
                name = frameLabel.name == null ? "" : frameLabel.name.toLowerCase();
-               if(name.indexOf("moves_") == 0 || name.indexOf("add") == 0 || name.indexOf("attack") == 0 && name != "attack" && name != "atk" || /^(?:sa5|as5|attack5|hidemove|ultimate|ultra|power)\d*$/i.test(name))
+               if(name.indexOf("moves_") == 0)
                {
-                  moveLabels.push(frameLabel);
+                  return frameLabel.name;
                }
             }
          }
-         if(moveLabels.length == 0)
-         {
-            return "";
-         }
-         if(moveLabels.length == 1)
-         {
-            return (moveLabels[0] as FrameLabel).name;
-         }
-         return this.pickBestDedicatedMove(moveLabels);
-      }
-      
-      private function pickBestDedicatedMove(param1:Array) : String
-      {
-         var mChild:MovieClip;
-         var mFrames:int;
-         var item:Object;
-         var isDup:Boolean;
-         var pool:Array;
-         var best:Object;
-         var physF:int;
-         var candidate:Object;
-         var bestScore:int;
-         var candScore:int;
-         var fl:FrameLabel = null;
-         var physLabel:String = this.findLabel(["attack","atk","attack1"]);
-         var specLabel:String = this.findLabel(["sa","special","magic"]);
-         var propLabel:String = this.findLabel(["cp","attribute","support","skill"]);
-         var currentF:int = this._mc.currentFrame;
-         var physChild:MovieClip = this.getActionChildAtLabel(physLabel);
-         var specChild:MovieClip = this.getActionChildAtLabel(specLabel);
-         var propChild:MovieClip = this.getActionChildAtLabel(propLabel);
-         var distinct:Array = [];
-         var allCandidates:Array = [];
-         for each(fl in param1)
-         {
-            if(fl != null)
-            {
-               mChild = this.getActionChildAtFrame(fl.frame);
-               mFrames = mChild != null ? mChild.totalFrames : 1;
-               item = {
-                  "label":fl.name,
-                  "child":mChild,
-                  "frames":mFrames
-               };
-               allCandidates.push(item);
-               isDup = false;
-               if(physChild != null && this.isDuplicateClip(mChild,physChild))
-               {
-                  isDup = true;
-               }
-               if(specChild != null && this.isDuplicateClip(mChild,specChild))
-               {
-                  isDup = true;
-               }
-               if(propChild != null && this.isDuplicateClip(mChild,propChild))
-               {
-                  isDup = true;
-               }
-               if(!isDup)
-               {
-                  distinct.push(item);
-               }
-            }
-         }
-         try
-         {
-            this._mc.gotoAndStop(currentF);
-         }
-         catch(ignored:*)
-         {
-         }
-         pool = distinct.length > 0 ? distinct : allCandidates;
-         if(pool.length == 0)
-         {
-            return (param1[0] as FrameLabel).name;
-         }
-         best = pool[0];
-         physF = physChild != null ? physChild.totalFrames : 0;
-         for each(candidate in pool)
-         {
-            bestScore = this.scoreMoveCandidate(String(best.label),int(best.frames),physF);
-            candScore = this.scoreMoveCandidate(String(candidate.label),int(candidate.frames),physF);
-            if(candScore > bestScore)
-            {
-               best = candidate;
-            }
-         }
-         return String(best.label);
-      }
-      
-      private function scoreMoveCandidate(param1:String, param2:int, physFrames:int = 0) : int
-      {
-         var idMatch:Array = param1.match(/moves?_?(\d+)/i);
-         var moveId:int = idMatch != null && idMatch.length > 1 ? int(idMatch[1]) : 0;
-         var isAttack:Boolean = moveId == 0 || moveId >= 30000;
-         if(moveId == 0 && physFrames > 0 && param2 < physFrames)
-         {
-            return param2;
-         }
-         return (isAttack ? 1000000 : 0) + param2;
-      }
-      
-      private function getActionChildAtLabel(param1:String) : MovieClip
-      {
-         if(param1 == "" || this._mc == null)
-         {
-            return null;
-         }
-         var f:int = this.findFrameForLabel(param1);
-         if(f <= 0)
-         {
-            return null;
-         }
-         return this.getActionChildAtFrame(f);
-      }
-      
-      private function getActionChildAtFrame(param1:int) : MovieClip
-      {
-         if(param1 <= 0 || this._mc == null)
-         {
-            return null;
-         }
-         try
-         {
-            this._mc.gotoAndStop(param1);
-         }
-         catch(e:*)
-         {
-            return null;
-         }
-         return this.getActionChildFrom(this._mc);
-      }
-      
-      private function findFrameForLabel(param1:String) : int
-      {
-         var fl:FrameLabel = null;
-         if(this._mc == null)
-         {
-            return 0;
-         }
-         for each(fl in this._mc.currentLabels)
-         {
-            if(fl != null && fl.name != null && fl.name.toLowerCase() == param1.toLowerCase())
-            {
-               return fl.frame;
-            }
-         }
-         return 0;
-      }
-      
-      private function isDuplicateClip(param1:MovieClip, param2:MovieClip) : Boolean
-      {
-         if(param1 == null || param2 == null)
-         {
-            return false;
-         }
-         if(param1 === param2)
-         {
-            return true;
-         }
-         var cls1:String = getQualifiedClassName(param1);
-         var cls2:String = getQualifiedClassName(param2);
-         if(cls1 != "flash.display::MovieClip" && cls2 != "flash.display::MovieClip")
-         {
-            return cls1 == cls2;
-         }
-         if(param1.totalFrames != param2.totalFrames || param1.totalFrames <= 1)
-         {
-            return false;
-         }
-         var b1:Rectangle = param1.getBounds(param1);
-         var b2:Rectangle = param2.getBounds(param2);
-         if(Math.abs(b1.width - b2.width) > 2 || Math.abs(b1.height - b2.height) > 2)
-         {
-            return false;
-         }
-         return param1.numChildren == param2.numChildren;
+         return "";
       }
       
       private function isExternalTimeline() : Boolean
       {
-         if(this.isExternalIdleOnlyTimeline())
-         {
-            return true;
-         }
          if(this.findLabel(["待机","物理攻击","属性攻击","特殊攻击","被打","必杀"]) != "")
          {
             return false;
          }
-         return this.findLabel(["attack","atk","attack1","sa","sa5","as5","attack5","cp","hidemove","hited","hurt","hit","idle","stand","special","skill","ultimate","ultra","power","add1","add2","add3"]) != "" || this.findDedicatedMoveLabel() != "";
-      }
-      
-      private function isExternalIdleOnlyTimeline() : Boolean
-      {
-         var frameLabel:FrameLabel = null;
-         var name:String = "";
-         if(this._mc == null || this._mc.totalFrames > 1 || this._mc.numChildren <= 0)
-         {
-            return false;
-         }
-         try
-         {
-            for each(frameLabel in this._mc.currentLabels)
-            {
-               name = frameLabel == null || frameLabel.name == null ? "" : frameLabel.name.toLowerCase();
-               if(name != "")
-               {
-                  if(name != "attack" && name != "atk" && name != "attack1")
-                  {
-                     return false;
-                  }
-               }
-            }
-         }
-         catch(ignored:*)
-         {
-            return false;
-         }
-         return this.getActionChild() != null;
+         return this.findLabel(["attack","atk","attack1","sa","sa5","cp","hidemove","hited","hurt","hit","idle","stand","special","skill","ultimate","ultra","power"]) != "";
       }
       
       private function isExternalHurtAction() : Boolean
@@ -1506,15 +1173,6 @@ package com.taomee.seer2.app.arena
       private function hasExternalIdleLabel() : Boolean
       {
          return this.findLabel(["idle","stand","wait"]) != "";
-      }
-      
-      private function isExternalLegacySceneAction(param1:MovieClip) : Boolean
-      {
-         if(!this._externalCompactTimeline || param1 == null || UClientUniversalBattleAdapter.supports(this._mc) || this.hasExternalIdleLabel())
-         {
-            return false;
-         }
-         return param1.totalFrames >= 120;
       }
       
       private function shouldFallbackExternalStatusToIdle(param1:String) : Boolean
@@ -1634,7 +1292,7 @@ package com.taomee.seer2.app.arena
                {
                   return dedicatedMove;
                }
-               candidates = ["hidemove","sa5","as5","attack5","ultimate","ultra","power","attack","atk","attack1","normalAttack","special","sa"];
+               candidates = ["hidemove","sa5","ultimate","ultra","power","attack","atk","attack1","normalAttack","special","sa"];
                break;
             case "被打":
             case "被暴击":
@@ -1651,10 +1309,8 @@ package com.taomee.seer2.app.arena
             case "待机":
                candidates = ["idle","stand","wait","attack","atk","attack1"];
                break;
-            case "变身效果":
-               candidates = ["transform","morph","change","appear","present","show"];
-               break;
             case "个性出场":
+            case "变身效果":
                candidates = ["primary","present","show","entrance","appear","idle","stand"];
                break;
             case "物理攻击":
@@ -1666,11 +1322,7 @@ package com.taomee.seer2.app.arena
          {
             return label;
          }
-         if(param1 == "变身效果")
-         {
-            return "";
-         }
-         if(param1 == "个性出场")
+         if(param1 == "个性出场" || param1 == "变身效果")
          {
             return this.findLabel(["idle","stand","wait","attack","atk","attack1"]);
          }
@@ -1743,27 +1395,9 @@ package com.taomee.seer2.app.arena
          this._externalUltimateCompletion = null;
          this._entryReroutedToIdle = false;
          this._requestedLabel = this.adjustCurrentLabel(param1);
-         if(this._externalIdleOnlyPose)
-         {
-            this._currentLabel = "";
-            this._mode = this.calculateMode(this._requestedLabel);
-            this.activateExternalIdleOnlyPose(serial);
-            return;
-         }
          fallbackIdleStatus = this.shouldFallbackExternalStatusToIdle(this._requestedLabel);
          this._currentLabel = fallbackIdleStatus ? this.resolveExternalLabel("待机") : this.resolveExternalLabel(this._requestedLabel);
          this._mode = fallbackIdleStatus ? MODE_EXTERNAL_IDLE : this.calculateMode(this._requestedLabel);
-         if(this._requestedLabel == "变身效果" && this._currentLabel == "")
-         {
-            setTimeout(function():void
-            {
-               if(serial == _actionSerial)
-               {
-                  dispathchActionEndEvent(EVT_END);
-               }
-            },0);
-            return;
-         }
          if(!fallbackIdleStatus && this._externalCompactTimeline && this._requestedLabel == "待机")
          {
             this._mode = MODE_EXTERNAL_IDLE;
@@ -1837,49 +1471,6 @@ package com.taomee.seer2.app.arena
                }
             },0);
          }
-      }
-      
-      private function activateExternalIdleOnlyPose(param1:int) : void
-      {
-         var serial:int = param1;
-         var action:MovieClip = null;
-         if(serial != this._actionSerial || this._mc == null)
-         {
-            return;
-         }
-         this._mc.removeEventListener(Event.FRAME_CONSTRUCTED,this.onFrameConstructed);
-         try
-         {
-            this._mc.gotoAndStop(1);
-         }
-         catch(ignored:*)
-         {
-         }
-         this._mc.visible = true;
-         action = this.getActionChild();
-         this._actionAnimation = action;
-         if(action != null)
-         {
-            this.resumeExternalIdleOnlyPose(action,0);
-            if(!this._externalNormalizationReady)
-            {
-               this.captureExternalNormalization(action,this._mc);
-            }
-         }
-         this.alignExternalCompactTimeline();
-         this._preparedSerial = serial;
-         setTimeout(function():void
-         {
-            if(serial != _actionSerial)
-            {
-               return;
-            }
-            if(isAttackAction())
-            {
-               dispatchHitOnce(serial);
-            }
-            dispathchActionEndEvent(EVT_END);
-         },0);
       }
       
       private function getActionChild() : MovieClip
@@ -1990,7 +1581,7 @@ package com.taomee.seer2.app.arena
       {
          var action:MovieClip = param1;
          this.clearExternalCompositeIsolation();
-         if(!this._externalCompactTimeline || action == null || this.isExternalLegacySceneAction(action) || UClientUniversalBattleAdapter.supports(this._mc))
+         if(!this._externalCompactTimeline || action == null || UClientUniversalBattleAdapter.supports(this._mc))
          {
             return;
          }
@@ -2056,23 +1647,6 @@ package com.taomee.seer2.app.arena
          {
             return;
          }
-         if(this._externalIdleOnlyPose)
-         {
-            try
-            {
-               this._mc.gotoAndStop(1);
-            }
-            catch(idleRootError:*)
-            {
-            }
-            action = this.getActionChild();
-            if(action != null)
-            {
-               this.resumeExternalIdleOnlyPose(action,0);
-               this.captureExternalNormalization(action,this._mc);
-            }
-            return;
-         }
          referenceLabel = this.findLabel(["idle","stand","wait","attack","atk","attack1"]);
          try
          {
@@ -2097,45 +1671,6 @@ package com.taomee.seer2.app.arena
                this.selectExternalFallbackPose(action);
             }
             this.captureExternalNormalization(action);
-         }
-      }
-      
-      private function resumeExternalIdleOnlyPose(param1:DisplayObject, param2:int = 0) : void
-      {
-         var container:DisplayObjectContainer = param1 as DisplayObjectContainer;
-         var child:DisplayObject = null;
-         var clip:MovieClip = null;
-         var index:int = 0;
-         if(param1 == null || param2 > 8)
-         {
-            return;
-         }
-         clip = param1 as MovieClip;
-         if(clip != null && clip.totalFrames > 1)
-         {
-            try
-            {
-               clip.play();
-            }
-            catch(ignored:*)
-            {
-            }
-         }
-         if(container == null)
-         {
-            return;
-         }
-         while(index < container.numChildren)
-         {
-            try
-            {
-               child = container.getChildAt(index);
-               this.resumeExternalIdleOnlyPose(child,param2 + 1);
-            }
-            catch(ignored:*)
-            {
-            }
-            index++;
          }
       }
       
@@ -2239,8 +1774,6 @@ package com.taomee.seer2.app.arena
       
       private function captureExternalNormalization(param1:MovieClip, param2:MovieClip = null) : Boolean
       {
-         var extractedId:uint;
-         var isCompanionTransform:Boolean;
          var bounds:Rectangle = null;
          var subject:Object = null;
          var coordinateRoot:MovieClip = param2 == null ? this._mc : param2;
@@ -2264,24 +1797,7 @@ package com.taomee.seer2.app.arena
             subject = this.measureRenderedSubject(param1,bounds,coordinateRoot);
             centerX = subject == null ? bounds.x + bounds.width * 0.5 : Number(subject.centerX);
             bottom = subject == null ? bounds.y + bounds.height : Number(subject.bottom);
-            extractedId = this._fighterResourceId;
-            if(extractedId == 0 && this._mc != null && this._mc.hasOwnProperty("sourceId"))
-            {
-               extractedId = uint(this._mc["sourceId"]);
-            }
-            isCompanionTransform = extractedId >= 70160 && extractedId <= 70170 || extractedId >= 190000000 && extractedId < 300000000;
-            if(this._mc != null && this._mc.hasOwnProperty("battleScale") && Number(this._mc["battleScale"]) > 0)
-            {
-               this._externalFitScale = Number(this._mc["battleScale"]);
-            }
-            else if(isCompanionTransform)
-            {
-               this._externalFitScale = 1.32;
-            }
-            else
-            {
-               this._externalFitScale = Math.min(1,EXTERNAL_MAX_RENDER_WIDTH / bounds.width,EXTERNAL_MAX_RENDER_HEIGHT / bounds.height) * UClientUniversalBattleAdapter.fitMultiplier(this._mc,bounds);
-            }
+            this._externalFitScale = Math.min(1,EXTERNAL_MAX_RENDER_WIDTH / bounds.width,EXTERNAL_MAX_RENDER_HEIGHT / bounds.height) * UClientUniversalBattleAdapter.fitMultiplier(this._mc,bounds);
             this._externalNormalizationX = EXTERNAL_TARGET_CENTER_X / this._externalFitScale - centerX;
             this._externalNormalizationY = EXTERNAL_TARGET_BOTTOM_Y / this._externalFitScale - bottom;
             this._externalNormalizationReady = true;
@@ -2607,35 +2123,14 @@ package com.taomee.seer2.app.arena
       
       private function probeHostViewport(param1:Event) : void
       {
-         var isCompanionTransform:Boolean;
-         var target:MovieClip;
-         var action:MovieClip;
-         var bounds:Rectangle;
-         var subject:Object;
-         var medianY:Number;
-         var bottomY:Number;
-         var topY:Number;
-         var shiftY:Number;
-         var extractedId:uint = this._fighterResourceId;
-         if(extractedId == 0 && this._mc != null && this._mc.hasOwnProperty("sourceId"))
-         {
-            extractedId = uint(this._mc["sourceId"]);
-         }
-         isCompanionTransform = extractedId >= 70160 && extractedId <= 70170 || extractedId >= 190000000 && extractedId < 300000000;
-         if(isCompanionTransform)
-         {
-            this._hostViewportNormalized = true;
-            this.removeEventListener(Event.ENTER_FRAME,this.probeHostViewport);
-            return;
-         }
-         target = null;
-         action = null;
-         bounds = null;
-         subject = null;
-         medianY = Number(NaN);
-         bottomY = Number(NaN);
-         topY = Number(NaN);
-         shiftY = 0;
+         var target:MovieClip = null;
+         var action:MovieClip = null;
+         var bounds:Rectangle = null;
+         var subject:Object = null;
+         var medianY:Number = Number(NaN);
+         var bottomY:Number = Number(NaN);
+         var topY:Number = Number(NaN);
+         var shiftY:Number = 0;
          if(this._hostViewportNormalized || this._mc == null)
          {
             this.removeEventListener(Event.ENTER_FRAME,this.probeHostViewport);
@@ -2706,10 +2201,6 @@ package com.taomee.seer2.app.arena
          if(medianY < OLD_UI_IDLE_EXTREME_MASS_TRIGGER_Y || medianY < OLD_UI_IDLE_COMPACT_MASS_TRIGGER_Y && topY < 0 && bottomY < OLD_UI_IDLE_BOTTOM_TRIGGER_Y || medianY < OLD_UI_IDLE_TALL_MASS_TRIGGER_Y && topY < -100 && bottomY < 620 || bounds.height >= OLD_UI_IDLE_TALL_HEIGHT_TRIGGER && topY < -100 && bottomY < 620)
          {
             shiftY = OLD_UI_IDLE_MAX_SHIFT_Y;
-         }
-         if(bottomY >= EXTERNAL_TARGET_BOTTOM_Y - 10)
-         {
-            shiftY = Math.max(0,EXTERNAL_TARGET_BOTTOM_Y - bottomY);
          }
          if(shiftY > 0)
          {
@@ -3187,7 +2678,7 @@ package com.taomee.seer2.app.arena
       {
          var action:MovieClip = param1;
          this.clearExternalActionCover();
-         if(!this._externalCompactTimeline || this.isExternalLegacySceneAction(action) || !this.isAttackAction() || action == null || this.isExternalActionVideoOrCinematic(action))
+         if(!this._externalCompactTimeline || !this.isAttackAction() || action == null || this.isExternalActionVideoOrCinematic(action))
          {
             return;
          }
@@ -4588,11 +4079,9 @@ package com.taomee.seer2.app.arena
             }
             this._externalIdleRoot = null;
          }
-         this.removeEventListener(Event.ADDED_TO_STAGE,this.onAddedToStageForBackdrop);
          this._actionAnimation = null;
          if(this._mc != null)
          {
-            this.setUClientBattleBackdropHost(null);
             UClientUniversalBattleAdapter.detach(this._mc);
             this._uclientAdapter = null;
             this._mc.removeEventListener(Event.FRAME_CONSTRUCTED,this.onFrameConstructed);
