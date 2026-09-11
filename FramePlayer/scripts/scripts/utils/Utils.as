@@ -44,7 +44,7 @@ package utils
          var cb:Function = param4;
          var handle:* = function(param1:Event):void
          {
-            count = count + 1;
+            count++;
             cb();
             if(count >= times)
             {
@@ -193,7 +193,7 @@ package utils
                cnt -= 1;
                mayCb();
             });
-            i = i + 1;
+            i++;
          }
       }
       

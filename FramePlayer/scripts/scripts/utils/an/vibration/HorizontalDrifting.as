@@ -29,7 +29,7 @@ package utils.an.vibration
          this._direction = param1;
          this._target = param2;
          this._targetBoundary = this._target.getBounds(this._target.parent);
-         var _loc4_:int = 0;
+         var _loc4_:* = 0;
          if(param1 == -1)
          {
             _loc4_ = this._targetBoundary.left - 120;

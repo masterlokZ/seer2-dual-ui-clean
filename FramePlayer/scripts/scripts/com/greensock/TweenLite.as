@@ -159,8 +159,13 @@ package com.greensock
          {
             _loc6_ = masterList[param1];
             _loc5_ = int(_loc6_.length);
-            while(--_loc5_ > -1)
+            while(true)
             {
+               _loc5_--;
+               if(_loc5_ <= -1)
+               {
+                  break;
+               }
                _loc4_ = _loc6_[_loc5_];
                if(!_loc4_.gc)
                {
@@ -228,8 +233,13 @@ package com.greensock
             {
                _loc4_ = _loc3_[_loc5_];
                _loc2_ = int(_loc4_.length);
-               while(--_loc2_ > -1)
+               while(true)
                {
+                  _loc2_--;
+                  if(_loc2_ <= -1)
+                  {
+                     break;
+                  }
                   if(TweenLite(_loc4_[_loc2_]).gc)
                   {
                      _loc4_.splice(_loc2_,1);
@@ -393,8 +403,13 @@ package com.greensock
                   if(this.cachedPT1.name == "_MULTIPLE_")
                   {
                      _loc3_ = int(_loc6_.overwriteProps.length);
-                     while(--_loc3_ > -1)
+                     while(true)
                      {
+                        _loc3_--;
+                        if(_loc3_ <= -1)
+                        {
+                           break;
+                        }
                         this.propTweenLookup[_loc6_.overwriteProps[_loc3_]] = this.cachedPT1;
                      }
                   }

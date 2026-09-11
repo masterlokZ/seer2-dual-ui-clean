@@ -184,7 +184,7 @@ class CacheUtils0
             return;
          }
          flag = true;
-         loading = Number(loading) - 1;
+         loading--;
          Utils.async(loadResourceNext);
          clearTimeout(timeout);
       };
@@ -197,7 +197,7 @@ class CacheUtils0
          });
          return;
       }
-      loading = Number(loading) + 1;
+      loading++;
       flag = false;
       loader = Utils.load(proxyHttp2Https(url),function(param1:LoaderInfo):void
       {

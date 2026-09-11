@@ -67,7 +67,7 @@ package animation.hub
             skillBtn.addEventListener("mouseOver",onSkillBtnOver);
             skillBtn.addEventListener("mouseOut",onSkillBtnOut);
             this._skillBtnVec.push(skillBtn);
-            i = i + 1;
+            i++;
          }
          this._tip = new SkillTip();
       }

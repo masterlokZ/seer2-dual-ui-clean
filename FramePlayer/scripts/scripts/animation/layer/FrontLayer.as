@@ -27,7 +27,6 @@ package animation.layer
    import flash.geom.Rectangle;
    import flash.media.Video;
    import flash.net.URLRequest;
-   import flash.utils.setTimeout;
    import utils.CacheUtils;
    import utils.Utils;
    import utils.an.DisplayObjectUtil;
@@ -245,47 +244,22 @@ package animation.layer
          });
       }
       
-      public function playLeftPresent(param1:Function, param2:Function = null) : void
+      public function playLeftPresent(param1:Function, param2:Function) : void
       {
          var pcb:Function = param1;
          var ecb:Function = param2;
          var sprite:PresentAnimation = new PresentAnimation();
          addChild(sprite);
-         var hasPresented:Boolean = false;
-         var safePcb:Function = function():void
-         {
-            if(hasPresented)
-            {
-               return;
-            }
-            hasPresented = true;
-            if(pcb != null)
-            {
-               try { pcb(); } catch(e:*) {}
-            }
-         };
-         var hasEnded:Boolean = false;
-         var safeEcb:Function = function():void
-         {
-            if(hasEnded)
-            {
-               return;
-            }
-            hasEnded = true;
-            safePcb();
-            if(ecb != null)
-            {
-               try { ecb(); } catch(e:*) {}
-            }
-            try { DisplayObjectUtil.removeFromParent(sprite); } catch(e:*) {}
-         };
-         sprite.initData({"onFighterPresentFun":safePcb});
+         sprite.initData({"onFighterPresentFun":pcb});
          sprite.play();
          Utils.once(sprite,"animationEnd",function():void
          {
-            safeEcb();
+            if(ecb != null)
+            {
+               ecb();
+            }
+            DisplayObjectUtil.removeFromParent(sprite);
          });
-         setTimeout(safeEcb,1000);
       }
       
       public function playHPIncrease(param1:int, param2:int) : void

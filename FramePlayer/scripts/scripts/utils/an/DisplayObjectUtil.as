@@ -143,7 +143,7 @@ package utils.an
       
       public static function setSize(param1:DisplayObject, param2:Number, param3:Number) : void
       {
-         var _loc4_:Number = NaN;
+         var _loc4_:* = NaN;
          if(isNaN(param2) || isNaN(param3))
          {
             return;

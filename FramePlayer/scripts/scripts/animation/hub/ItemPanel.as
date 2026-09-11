@@ -87,7 +87,7 @@ package animation.hub
             itemDisplay.addEventListener("mouseOut",onOut);
             this._itemDisplayVec.push(itemDisplay);
             addChild(itemDisplay);
-            i = i + 1;
+            i++;
          }
          this._prevBtn = new UI_FightPage();
          this._prevBtn.x = 3;
@@ -115,7 +115,7 @@ package animation.hub
       
       private function showPage(param1:int) : void
       {
-         var _loc5_:int = 0;
+         var _loc5_:* = 0;
          var _loc2_:ItemDisplay = null;
          if(param1 < 0 || param1 > _maxPageIndex)
          {

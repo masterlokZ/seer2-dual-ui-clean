@@ -20,21 +20,27 @@ package enums
       
       public static function atkLabel(param1:String) : String
       {
-         switch(param1)
+         if(param1 === "物理")
          {
-            case "物理":
-               return "物理攻击";
-            case "特殊":
-               return "特殊攻击";
-            case "属性":
-               return "属性攻击";
-            case "必杀":
-               return "必杀";
-            case "合体":
-               return "合体攻击";
-            default:
-               return "物理攻击";
+            return "物理攻击";
          }
+         if(param1 === "特殊")
+         {
+            return "特殊攻击";
+         }
+         if(param1 === "属性")
+         {
+            return "属性攻击";
+         }
+         if(param1 === "必杀")
+         {
+            return "必杀";
+         }
+         if(param1 === "合体")
+         {
+            return "合体攻击";
+         }
+         return "物理攻击";
       }
       
       public static function pow() : Array

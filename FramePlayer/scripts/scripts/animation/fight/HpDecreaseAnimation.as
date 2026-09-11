@@ -172,8 +172,8 @@ package animation.fight
          var _loc5_:int = int(this._digitSpriteVec.length);
          var _loc4_:int = _loc5_ * 30;
          var _loc7_:int = _loc5_ * 2 + 38;
-         var _loc6_:int = 100 - _loc4_ >> 1;
-         var _loc2_:int = 100 - _loc7_ >> 1;
+         var _loc6_:* = 100 - _loc4_ >> 1;
+         var _loc2_:* = 100 - _loc7_ >> 1;
          var _loc1_:int = 0;
          while(_loc1_ < _loc5_)
          {

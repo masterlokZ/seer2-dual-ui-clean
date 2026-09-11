@@ -26,7 +26,7 @@ package com.greensock.core
             param1.timeline.remove(param1,true);
          }
          param1.timeline = this;
-         param1.cachedStartTime = Number(param2) + param1.delay;
+         param1.cachedStartTime = param2 + param1.delay;
          if(param1.gc)
          {
             param1.setEnabled(true,true);
@@ -54,7 +54,7 @@ package com.greensock.core
       {
          var _loc5_:Number = NaN;
          var _loc4_:TweenCore = null;
-         var _loc6_:TweenCore = _firstChild;
+         var _loc6_:* = _firstChild;
          this.cachedTotalTime = param1;
          this.cachedTime = param1;
          while(_loc6_)

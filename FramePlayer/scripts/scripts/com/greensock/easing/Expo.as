@@ -33,7 +33,8 @@ package com.greensock.easing
          {
             return param3 * 0.5 * Math.pow(2,10 * (param1 - 1)) + param2;
          }
-         return param3 * 0.5 * (-Math.pow(2,-10 * --param1) + 2) + param2;
+         param1--;
+         return param3 * 0.5 * (-Math.pow(2,-10 * param1) + 2) + param2;
       }
    }
 }
