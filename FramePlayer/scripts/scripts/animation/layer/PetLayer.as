@@ -1805,10 +1805,6 @@ package animation.layer
             if(isFinite(bounds.width) && isFinite(bounds.height) && bounds.width < 10000 && bounds.height < 10000)
             {
                fitScale = Math.min(1,EXTERNAL_MAX_RENDER_WIDTH / bounds.width,EXTERNAL_MAX_RENDER_HEIGHT / bounds.height) * UClientUniversalBattleAdapter.fitMultiplier(pet,bounds);
-               if(bounds.width < 400 && bounds.height < 340)
-               {
-                  fitScale = Math.min(1.35,480 / bounds.width,400 / bounds.height);
-               }
                if(pet.hasOwnProperty("battleScale") && Number(pet["battleScale"]) > 0)
                {
                   fitScale = Number(pet["battleScale"]);
