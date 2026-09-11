@@ -54,7 +54,7 @@ package com.taomee.seer2.app.arena
       
       private static const EXTERNAL_TARGET_CENTER_X:Number = 163;
       
-      private static const EXTERNAL_TARGET_BOTTOM_Y:Number = 375;
+      private static const EXTERNAL_TARGET_BOTTOM_Y:Number = 370;
       
       private static const EXTERNAL_FALLBACK_ANCHOR_X:Number = 111;
       
@@ -80,7 +80,7 @@ package com.taomee.seer2.app.arena
       
       private static const OLD_UI_IDLE_TALL_HEIGHT_TRIGGER:Number = 600;
       
-      private static const OLD_UI_IDLE_BOTTOM_TRIGGER_Y:Number = 460;
+      private static const OLD_UI_IDLE_BOTTOM_TRIGGER_Y:Number = 360;
       
       private static const OLD_UI_IDLE_MAX_SHIFT_Y:Number = 45;
       
@@ -310,11 +310,6 @@ package com.taomee.seer2.app.arena
          if(this._externalCompactTimeline)
          {
             this._externalForceIdleInstance = this.shouldForceExternalIdleInstance();
-            if(this._externalForceIdleInstance)
-            {
-               this.y += OLD_UI_IDLE_MAX_SHIFT_Y;
-               this._hostViewportNormalized = true;
-            }
          }
          this.addEventListener(Event.ENTER_FRAME,this.probeHostViewport,false,0,true);
          this.alignExternalCompactTimeline();
@@ -2459,13 +2454,19 @@ package com.taomee.seer2.app.arena
          medianY = this._hostViewportMedianSum / this._hostViewportProbeCount;
          bottomY = this._hostViewportBottomSum / this._hostViewportProbeCount;
          topY = this._hostViewportTopSum / this._hostViewportProbeCount;
-         if(medianY < OLD_UI_IDLE_EXTREME_MASS_TRIGGER_Y || medianY < OLD_UI_IDLE_COMPACT_MASS_TRIGGER_Y && topY < 0 && bottomY < OLD_UI_IDLE_BOTTOM_TRIGGER_Y || medianY < OLD_UI_IDLE_TALL_MASS_TRIGGER_Y && topY < -100 && bottomY < 620 || bounds.height >= OLD_UI_IDLE_TALL_HEIGHT_TRIGGER && topY < -100 && bottomY < 620)
+         var targetGroundY:Number = EXTERNAL_TARGET_BOTTOM_Y;
+         var effectiveBottom:Number = (subject != null && !isNaN(Number(subject.bottomY)) && Number(subject.bottomY) > 0) ? Number(subject.bottomY) : bottomY;
+         if(medianY < OLD_UI_IDLE_EXTREME_MASS_TRIGGER_Y || medianY < OLD_UI_IDLE_COMPACT_MASS_TRIGGER_Y && topY < 0 && effectiveBottom < OLD_UI_IDLE_BOTTOM_TRIGGER_Y || medianY < OLD_UI_IDLE_TALL_MASS_TRIGGER_Y && topY < -100 && effectiveBottom < 620 || bounds.height >= OLD_UI_IDLE_TALL_HEIGHT_TRIGGER && topY < -100 && effectiveBottom < 620)
          {
-            shiftY = OLD_UI_IDLE_MAX_SHIFT_Y;
+            shiftY = targetGroundY - effectiveBottom;
          }
-         if(shiftY > 0)
+         else if(Math.abs(targetGroundY - effectiveBottom) > 1)
          {
-            this.y += Math.min(OLD_UI_IDLE_MAX_SHIFT_Y,shiftY);
+            shiftY = targetGroundY - effectiveBottom;
+         }
+         if(shiftY != 0 && !isNaN(shiftY))
+         {
+            this.y += shiftY;
          }
          this._hostViewportNormalized = true;
          this.removeEventListener(Event.ENTER_FRAME,this.probeHostViewport);

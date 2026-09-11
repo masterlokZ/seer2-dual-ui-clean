@@ -55,7 +55,7 @@ package animation.layer
       
       private static const EXTERNAL_TARGET_CENTER_X:Number = 163;
       
-      private static const EXTERNAL_TARGET_BASELINE_Y:Number = 375;
+      private static const EXTERNAL_TARGET_BASELINE_Y:Number = 370;
       
       private static const EXTERNAL_UClient_TARGET_BASELINE_Y:Number = 425;
       
@@ -1804,7 +1804,7 @@ package animation.layer
             }
             if(isFinite(bounds.width) && isFinite(bounds.height) && bounds.width < 10000 && bounds.height < 10000)
             {
-               fitScale = Math.min(1,EXTERNAL_MAX_RENDER_WIDTH / bounds.width,EXTERNAL_MAX_RENDER_HEIGHT / bounds.height) * UClientUniversalBattleAdapter.fitMultiplier(pet,bounds);
+               fitScale = Math.min(1,EXTERNAL_MAX_RENDER_WIDTH / bounds.width,EXTERNAL_MAX_RENDER_HEIGHT / bounds.height);
                if(pet.hasOwnProperty("battleScale") && Number(pet["battleScale"]) > 0)
                {
                   fitScale = Number(pet["battleScale"]);
@@ -1822,7 +1822,7 @@ package animation.layer
                centerX = bounds.x + bounds.width * 0.5;
                bottom = bounds.y + bounds.height;
                pet.x = fighter.x + (EXTERNAL_TARGET_CENTER_X - centerX * fitScale + customOffsetX) * fighter.scaleX;
-               pet.y = fighter.y + (420.0 - bottom * fitScale + customOffsetY) * fighter.scaleY;
+               pet.y = fighter.y + (370.0 - bottom * fitScale + customOffsetY) * fighter.scaleY;
                externalPlaced[pet] = true;
                delete externalPlacementAttempts[pet];
             }
@@ -1844,7 +1844,7 @@ package animation.layer
          if(int(externalPlacementAttempts[pet]) > 12)
          {
             pet.x = fighter.x + EXTERNAL_TARGET_CENTER_X * fighter.scaleX;
-            pet.y = fighter.y + (420.0 - EXTERNAL_TEMPLATE_BASELINE_Y) * fighter.scaleY;
+            pet.y = fighter.y + (370.0 - EXTERNAL_TEMPLATE_BASELINE_Y) * fighter.scaleY;
             externalPlaced[pet] = true;
             return;
          }
