@@ -2196,22 +2196,46 @@ package com.taomee.seer2.app.arena
          this._mc.addEventListener(Event.FRAME_CONSTRUCTED,this.onFrameConstructed);
          try
          {
-            if(this._currentLabel == "")
+            var actionTimeline:MovieClip = this.getEffectiveTimeline(this._mc);
+            if(actionTimeline != null)
             {
-               this._mc.gotoAndStop(1);
+               actionTimeline.visible = true;
+               if(this._currentLabel == "")
+               {
+                  actionTimeline.gotoAndStop(1);
+               }
+               else
+               {
+                  actionTimeline.gotoAndStop(this._currentLabel);
+               }
             }
-            else
+            if(this._mc !== actionTimeline && this._mc != null)
             {
-               this._mc.gotoAndStop(this._currentLabel);
+               this._mc.visible = true;
+               try
+               {
+                  this._mc.gotoAndStop(1);
+               }
+               catch(frameError:*)
+               {
+               }
             }
          }
          catch(labelError:*)
          {
             try
             {
-               this._mc.gotoAndStop(1);
+               var fallbackTimeline:MovieClip = this.getEffectiveTimeline(this._mc);
+               if(fallbackTimeline != null)
+               {
+                  fallbackTimeline.gotoAndStop(1);
+               }
+               if(this._mc !== fallbackTimeline && this._mc != null)
+               {
+                  this._mc.gotoAndStop(1);
+               }
             }
-            catch(frameError:*)
+            catch(frameError2:*)
             {
             }
          }
@@ -2233,28 +2257,8 @@ package com.taomee.seer2.app.arena
       
       private function getActionChild() : MovieClip
       {
-         var child:MovieClip = null;
-         var index:int = 0;
-         if(this._mc == null)
-         {
-            return null;
-         }
-         try
-         {
-            while(index < this._mc.numChildren)
-            {
-               child = this._mc.getChildAt(index) as MovieClip;
-               if(child != null)
-               {
-                  return child;
-               }
-               index++;
-            }
-         }
-         catch(ignored:*)
-         {
-         }
-         return null;
+         var timeline:MovieClip = this.getEffectiveTimeline(this._mc);
+         return this.getActionChildFrom(timeline);
       }
       
       private function getDirectMovieChild(param1:MovieClip) : MovieClip
@@ -4314,41 +4318,8 @@ package com.taomee.seer2.app.arena
                hitSeen = true;
                dispatchHitOnce(param2);
             }
-            if(primaryVisual != null && primaryVisual.parent == null)
-            {
-               primaryVisual.removeEventListener(Event.EXIT_FRAME,primaryExitHandler);
-               primaryVisual = null;
-               primaryExitHandler = null;
-               _externalPrimaryVisual = null;
-               _externalVisualExitHandler = null;
-            }
-            bindPrimaryVisual();
             effectiveEnd = targetEndFrame > 0 ? targetEndFrame : action.totalFrames;
-            if(current >= effectiveEnd)
-            {
-               try
-               {
-                  action.stop();
-               }
-               catch(actionStopError:*)
-               {
-               }
-               if(primaryVisual == null)
-               {
-                  return;
-               }
-            }
-            else if(primaryVisual != null && current >= Math.max(2,action.totalFrames - 1))
-            {
-               try
-               {
-                  action.stop();
-               }
-               catch(actionStopError:*)
-               {
-               }
-            }
-            if(primaryVisual == null && (current >= effectiveEnd || actionPeak >= Math.max(2,effectiveEnd - 2) && current < actionLast))
+            if(current >= effectiveEnd || (actionPeak >= Math.max(2,effectiveEnd - 2) && current < actionLast))
             {
                try
                {
@@ -4430,8 +4401,6 @@ package com.taomee.seer2.app.arena
                setTimeout(finish,0);
                return;
             }
-            watchdogId = setTimeout(finish,Math.max(30000,action.totalFrames * 250 + 5000));
-            _externalTimer = watchdogId;
          };
          if(action == null || !this.setActionFrame(action,targetFrame > 0 ? targetFrame : 1))
          {
@@ -4450,47 +4419,7 @@ package com.taomee.seer2.app.arena
             setTimeout(finish,0);
             return;
          }
-         if(isAppearAction && !this.isEffectivelyVisible())
-         {
-            try
-            {
-               action.stop();
-            }
-            catch(stopErr:*)
-            {
-            }
-            bindPrimaryVisual();
-            invisibleTicks = 0;
-            visibilityWatcher = function(param1:Event):void
-            {
-               if(finished || param2 != _actionSerial || action == null)
-               {
-                  removeEventListener(Event.ENTER_FRAME,visibilityWatcher);
-                  visibilityWatcher = null;
-                  return;
-               }
-               try
-               {
-                  action.stop();
-               }
-               catch(stopErr:*)
-               {
-               }
-               bindPrimaryVisual();
-               ++invisibleTicks;
-               if(isEffectivelyVisible() || invisibleTicks >= 150)
-               {
-                  removeEventListener(Event.ENTER_FRAME,visibilityWatcher);
-                  visibilityWatcher = null;
-                  startPlayback();
-               }
-            };
-            this.addEventListener(Event.ENTER_FRAME,visibilityWatcher,false,0,true);
-         }
-         else
-         {
-            startPlayback();
-         }
+         startPlayback();
       }
       
       private function playAnimation(param1:Function = null, param2:int = 0) : void
