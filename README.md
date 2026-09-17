@@ -1,5 +1,7 @@
 # Seer2 Dual UI Clean Codebase (Pristine)
 
+> **当前版本状态**：解决了大部分问题，但是终极贝利亚位置以及传统swf入场问题还没有解决
+
 This repository contains the pristine, clean extraction and decompilation of the dual UI components from the official Seer2 launcher: **CoreDLL** and **FramePlayer**.
 
 ## Repository Structure
