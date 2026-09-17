@@ -1,6 +1,6 @@
 # Seer2 Dual UI Clean Codebase (Pristine)
 
-> **当前版本状态**：终极贝利亚等传统 Flash 精灵与 U 端精灵的双向站位通修已实测生效闭环，目前仅剩传统swf入场时序问题待攻坚
+> **当前版本状态**：终极贝利亚等传统 Flash 精灵站位通修与传统 SWF 入场动画（胶囊落地破壳协同起播、完整出场动作、技能零死锁）已实战测试完全生效闭环！
 
 This repository contains the pristine, clean extraction and decompilation of the dual UI components from the official Seer2 launcher: **CoreDLL** and **FramePlayer**.
 
