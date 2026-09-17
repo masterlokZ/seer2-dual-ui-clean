@@ -2264,7 +2264,8 @@ package animation.layer
                   targetBaselineY = EXTERNAL_UClient_TARGET_BASELINE_Y;
                }
                subject = this.measureRenderedSubject(pet,bounds,pet);
-               if(subject != null && !isNaN(Number(subject.bottom)) && Number(subject.bottom) >= 40 && Number(subject.bottom) <= 250)
+               var maxBaselineLimit:Number = UClientUniversalBattleAdapter.supports(pet) ? 500 : 250;
+               if(subject != null && !isNaN(Number(subject.bottom)) && Number(subject.bottom) >= 40 && Number(subject.bottom) <= maxBaselineLimit)
                {
                   effectiveBaselineY = Number(subject.bottom);
                }

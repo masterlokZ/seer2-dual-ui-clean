@@ -2562,7 +2562,8 @@ package com.taomee.seer2.app.arena
             }
             this._externalFitScale = Math.min(1,EXTERNAL_MAX_RENDER_WIDTH / bounds.width,EXTERNAL_MAX_RENDER_HEIGHT / bounds.height) * UClientUniversalBattleAdapter.fitMultiplier(this._mc,bounds);
             subject = this.measureRenderedSubject(param1,bounds,coordinateRoot);
-            if(subject != null && !isNaN(Number(subject.bottom)) && Number(subject.bottom) >= 40 && Number(subject.bottom) <= 250)
+            var maxBaselineLimit:Number = UClientUniversalBattleAdapter.supports(this._mc) ? 500 : 250;
+            if(subject != null && !isNaN(Number(subject.bottom)) && Number(subject.bottom) >= 40 && Number(subject.bottom) <= maxBaselineLimit)
             {
                effectiveBaselineY = Number(subject.bottom);
             }
@@ -2582,7 +2583,8 @@ package com.taomee.seer2.app.arena
             {
                subject = this.measureRenderedSubject(param1,bounds,coordinateRoot);
             }
-            if(subject != null && !isNaN(Number(subject.bottom)) && Number(subject.bottom) >= 40 && Number(subject.bottom) <= 250)
+            var maxBaselineLimit:Number = UClientUniversalBattleAdapter.supports(this._mc) ? 500 : 250;
+            if(subject != null && !isNaN(Number(subject.bottom)) && Number(subject.bottom) >= 40 && Number(subject.bottom) <= maxBaselineLimit)
             {
                effectiveBaselineY = Number(subject.bottom);
             }
