@@ -1197,7 +1197,7 @@ package com.taomee.seer2.app.arena
          {
             return "";
          }
-         var candidates:Array = ["个性出场","appear","transform","add1","miracle","trans","primary","present","show","entrance","intro","出场","入场"];
+         var candidates:Array = ["个性出场","appear","present","show","entrance","intro","出场","入场"];
          for each(candidate in candidates)
          {
             for each(frameLabel in param1.currentLabels)
@@ -2044,7 +2044,7 @@ package com.taomee.seer2.app.arena
                candidates = ["transform","morph","change","miracle","trans","primary","present","show","entrance","appear"];
                break;
             case "个性出场":
-               candidates = ["个性出场","appear","transform","add1","miracle","trans","primary","present","show","entrance","intro","出场","入场","idle","stand"];
+               candidates = ["个性出场","appear","present","show","entrance","intro","出场","入场","idle","stand"];
                break;
             case "物理攻击":
             default:
@@ -4130,7 +4130,7 @@ package com.taomee.seer2.app.arena
          var terminalStableTicks:int = 0;
          var targetFrame:int = 0;
          var targetEndFrame:int = 0;
-         var isAppearAction:Boolean = this._requestedLabel == "个性出场" || this._currentLabel == "appear" || this._currentLabel == "transform" || this._currentLabel == "add1";
+         var isAppearAction:Boolean = this._requestedLabel == "个性出场" || this._currentLabel == "appear" || this._currentLabel == "present";
          if(action != null)
          {
             if(isAppearAction)
