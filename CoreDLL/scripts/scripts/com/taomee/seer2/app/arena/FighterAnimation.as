@@ -2559,14 +2559,13 @@ package com.taomee.seer2.app.arena
             if(UClientUniversalBattleAdapter.supports(this._mc))
             {
                targetBaselineY = EXTERNAL_UClient_TARGET_BASELINE_Y;
+               subject = this.measureRenderedSubject(param1,bounds,coordinateRoot);
+               if(subject != null && !isNaN(Number(subject.bottom)) && Number(subject.bottom) >= 40 && Number(subject.bottom) <= 500)
+               {
+                  effectiveBaselineY = Number(subject.bottom);
+               }
             }
             this._externalFitScale = Math.min(1,EXTERNAL_MAX_RENDER_WIDTH / bounds.width,EXTERNAL_MAX_RENDER_HEIGHT / bounds.height) * UClientUniversalBattleAdapter.fitMultiplier(this._mc,bounds);
-            subject = this.measureRenderedSubject(param1,bounds,coordinateRoot);
-            var maxBaselineLimit:Number = UClientUniversalBattleAdapter.supports(this._mc) ? 500 : 250;
-            if(subject != null && !isNaN(Number(subject.bottom)) && Number(subject.bottom) >= 40 && Number(subject.bottom) <= maxBaselineLimit)
-            {
-               effectiveBaselineY = Number(subject.bottom);
-            }
             this._externalNormalizationX = (EXTERNAL_TARGET_CENTER_X - EXTERNAL_TEMPLATE_CENTER_X * this._externalFitScale) / this._externalFitScale;
             this._externalNormalizationY = (targetBaselineY - effectiveBaselineY * this._externalFitScale) / this._externalFitScale;
             this._externalNormalizationReady = true;
@@ -2578,15 +2577,14 @@ package com.taomee.seer2.app.arena
             if(UClientUniversalBattleAdapter.supports(this._mc))
             {
                targetBaselineY = EXTERNAL_UClient_TARGET_BASELINE_Y;
-            }
-            if(subject == null && bounds != null)
-            {
-               subject = this.measureRenderedSubject(param1,bounds,coordinateRoot);
-            }
-            var maxBaselineLimit:Number = UClientUniversalBattleAdapter.supports(this._mc) ? 500 : 250;
-            if(subject != null && !isNaN(Number(subject.bottom)) && Number(subject.bottom) >= 40 && Number(subject.bottom) <= maxBaselineLimit)
-            {
-               effectiveBaselineY = Number(subject.bottom);
+               if(subject == null && bounds != null)
+               {
+                  subject = this.measureRenderedSubject(param1,bounds,coordinateRoot);
+               }
+               if(subject != null && !isNaN(Number(subject.bottom)) && Number(subject.bottom) >= 40 && Number(subject.bottom) <= 500)
+               {
+                  effectiveBaselineY = Number(subject.bottom);
+               }
             }
             this._externalNormalizationX = (EXTERNAL_TARGET_CENTER_X - EXTERNAL_TEMPLATE_CENTER_X * this._externalFitScale) / this._externalFitScale;
             this._externalNormalizationY = (targetBaselineY - effectiveBaselineY * this._externalFitScale) / this._externalFitScale;
