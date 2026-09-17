@@ -1726,9 +1726,16 @@ package com.taomee.seer2.app.arena
             }
             var symbolA:String = getQualifiedClassName(param1.child);
             var symbolB:String = getQualifiedClassName(param2.child);
-            if(symbolA == symbolB && symbolA != "flash.display::MovieClip" && param1.child.constructor === param2.child.constructor)
+            if(symbolA == symbolB)
             {
-               return true;
+               if(symbolA != "flash.display::MovieClip" && param1.child.constructor === param2.child.constructor)
+               {
+                  return true;
+               }
+               if(param1.child.totalFrames > 1 && param1.child.totalFrames == param2.child.totalFrames)
+               {
+                  return true;
+               }
             }
          }
          return false;
