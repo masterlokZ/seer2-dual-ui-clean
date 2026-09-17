@@ -86,7 +86,7 @@
 
 **17:05 基线核心技术方案与已解决问题**
 
-17:05 基线作为双 UI 协同的权威稳定锚点，已经彻底攻克并固化了四大核心架构与流程机制：
+17:05 基线作为双 UI 协同的权威稳定锚点，已经彻底攻克并固化了五大核心架构与流程机制：
 
 1. FramePlayer 新 UI Scoped importScript 最小增量构建范式
 
@@ -124,31 +124,20 @@
 - 地平线对齐规范: 确立统一地平线坐标空间（对齐对手飞亚斯 FeiYaSi 基线，Y=370 - 420 区间），解决不同战斗模式下的高低浮动；
 - 状态面板与出招挂载: 实现了现代战斗中血条指示器、怒气槽、天气浮层与技能出招面板的确定性层级挂载；攻克了大招播放超时原地卡死问题（`ULT_STALL`），通过 `fuiMoveActionEnd` 事件驱动与状态机闭环，出招完毕后立即安全恢复回合待机。
 
+5. 终极贝利亚等传统 Flash 中心注册点超大精灵与 U 端精灵的正交站位通修（实测生效闭环）
+
+- 痛点根因: `measureRenderedSubject` 动态像素分位数测绘原本专为解决 UClient 模型（阿克希亚等）不可见辅助 Quad 干扰而设计；无差别应用到传统 Flash 矢量时间轴模型时，因其腹部中心注册点拓扑，测得的 236px/252px 半身距离被误当全身高度扣减，导致精灵被反向拉升冲穿天花板。
+- 正交解耦方案: 将 `measureRenderedSubject` 严格约束在 `if(UClientUniversalBattleAdapter.supports(...))` 内部。
+  - UClient 模型（阿克希亚 1400869、星皇 190003291 等）：`supports == true`，执行动态测算并放宽上限至 500px，全身高度精准贴地（阿克希亚获得 58px 下沉）；
+  - 传统 Flash 模型（终极贝利亚 70098 等）：`supports == false`，绝对不调用动态测绘，坚守官方标准模板基线 `EXTERNAL_TEMPLATE_BASELINE_Y = 145`，计算得 `pet.y = 280`，脚底落于精准 532px 石台地面，经用户实战测试验证完全生效，彻底根除冲顶与悬空。
+
 ---
 
 **尚未解决的遗留缺陷与攻坚方向**
 
-当前 17:05 基线虽然保证了系统整体的稳定性与主干战斗闭环，但仍存留两处需要高精度数学建模与时序状态机改造的深层缺陷：
+当前 17:05 基线虽然保证了系统整体的稳定性与主干战斗闭环，目前仅剩传统swf入场时序问题待攻坚：
 
-1. 终极贝利亚等超大中心注册点（腰部对齐）精灵的站位通修问题
-
-- 缺陷现象: 终极贝利亚等特大体型精灵或特定 BOSS 在入场及站位时，出现异常浮空（悬空于石台之上数十像素）或脚部深陷石台地面的情况。
-- 深层机理剖析:
-  - 注册点契约分裂: 赛尔号传统 95% 以上精灵模型均以“脚底地面接触点”为坐标原点 `(0, 0)`（Bottom-Aligned Registration）；然而终极贝利亚及部分巨型机甲精灵，其 Flash 模型内部坐标系是以“体型几何中心/腰部位置”作为注册点 `(0, 0)`（Center-of-Mass / Waist-Aligned Registration）。
-  - 地平线公式误伤: 在 [FighterAnimation.as](/s2-ui/CoreDLL/scripts/scripts/com/taomee/seer2/app/arena/FighterAnimation.as:2962) 和 [PetLayer.as](/s2-ui/FramePlayer/scripts/scripts/animation/layer/PetLayer.as:1825) 中，当前站位归一化算法以包围盒底部（`bottom = bounds.y + bounds.height`）或单侧极值作为推算基准：
-    ```actionscript
-    pet.y = fighter.y + (370.0 - bottom * fitScale + customOffsetY) * fighter.scaleY;
-    ```
-  - 连带次生回归: 历史尝试微调阿克希亚（1400869）等精灵的 `EXTERNAL_TARGET_BOTTOM_Y` 或 `OLD_UI_IDLE_BOTTOM_TRIGGER_Y` 阈值时，因中心注册点精灵的上下半身高度对冲（`top` 与 `bottom` 绝对值均极大），直接触发了错误的位移补偿，导致顾此失彼。
-- 通修推进方案 (Universal Geometric Heuristic):
-  - 严禁通过硬编码宠物 ID（如 `if (petId == 4000)`）走特判后门；
-  - 必须在 `FighterAnimation` 与 `PetLayer` 中引入包围盒垂直对称度比率分析：
-    计算 `symmetryRatio = Math.abs(bounds.top + bounds.bottom) / bounds.height`；
-    - 若 `symmetryRatio < 0.25`（注册点位于垂直中轴线附近），判定为腰部/中心对齐资产，采用基于实际可见视觉底边界（Visual Foot Boundary）的对齐算法；
-    - 若 `bounds.bottom` 接近 0 且 `bounds.top < -50`，判定为标准脚底对齐资产，沿用标准地平线对齐；
-  - 配合 50+ 款大中小典型精灵样本做闭环回归断言矩阵，确保通修不退化。
-
-2. 传统 SWF 在个性出场（appear）阶段的时序扰动与入场归一化锁死问题
+1. 传统 SWF 在个性出场（appear）阶段的时序扰动与入场归一化锁死问题
 
 - 缺陷现象: 部分具有复杂入场特效（如 3291 瀚宇星皇 `add1` 登场、3788 混元天尊 `transform` 变身）的传统 SWF，在战斗开始阶段偶尔出现全场定死、控制面板无法加载、精灵停留在入场初始帧的“停滞死锁（Freeze/Stall）”。
 - 深层机理剖析:
