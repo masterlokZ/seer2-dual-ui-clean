@@ -86,7 +86,7 @@
 
 **17:05 基线核心技术方案与已解决问题**
 
-17:05 基线作为双 UI 协同的权威稳定锚点，已经彻底攻克并固化了七大核心架构与流程机制：
+17:05 基线作为双 UI 协同的权威稳定锚点，已经彻底攻克并固化了八大核心架构与流程机制：
 
 1. FramePlayer 新 UI Scoped importScript 最小增量构建范式
 
@@ -148,11 +148,16 @@
 - 痛点根因：终极赛罗（70096）等低版本 SWF 9 触发 AVM2 延迟帧构造，同调用栈内 getChildAt(0) 同步返回 null，导致 isDuplicateActionStats 判重失效，特攻动作（moves_37522）未能剔除混入必杀候选池，导致大招回退为特攻；
 - 彻底通修方案：双端（CoreDLL 与 FramePlayer）isDuplicateActionStats 增强普通 MovieClip 帧数特征比对；同时将 custom-skins 全量 48 个 SWF 9 文件的头版本号（Byte 3）安全就地归一化升级至 SWF 15（Flash 11.2+），AVM2 引擎同步构造子元件，候选池稳定收敛为正常的两个专属大招 [moves_37521, moves_28813]。
 
+8. 双端物理打击标记（Hit Marker）与时间轴特征无偏评分（方案 B 实测完全生效闭环）
+
+- 痛点根因：早期评分机制依赖 `var isAttack:Boolean = moveId == 0 || moveId >= 30000;` 给予百万分加权，属于以特定技能序号段推测动作属性的违规特修，一旦登录器自定义低于 30000 序号的必杀技（如 `moves_28813`、`moves_28815`），大招会被错误降权；若单纯改用客观总帧数（`return param2`），又会导致长达百帧的属性辅助/加血长动作反噬抢占强力必杀；
+- 彻底通修方案（方案 B）：在双端（CoreDLL 与 FramePlayer）`scoreMoveCandidate` 中全面移除 `moveId` 正则与 `>= 30000` 判断，改用动作子元件的物理打击标记检测（`"hit" in child || "damage" in child || "beHit" in child` 或时间轴打击标签 `findTimelineLabel(child, ["hit", "damage", "attack", "atk"]) != ""`）。具有真实敌方打击能力的动作赋予优先权，配合子元件 Class 与时间轴判重，彻底根除对服务端 ID 的依赖，实现纯物理特征驱动。
+
 ---
 
 **尚未解决的遗留缺陷与攻坚方向**
 
-当前双 UI 核心攻坚项（终极贝利亚等超大模型站位对齐、传统 SWF 完整入场动画协同起播、技能释放零卡顿、双大招专属动作通用排重与 SWF 资产版本归一化）已全量实战验证闭环。
+当前双 UI 核心攻坚项（终极贝利亚等超大模型站位对齐、传统 SWF 完整入场动画协同起播、技能释放零卡顿、双大招专属动作通用排重、方案 B 物理打击标记（Hit Marker）无偏评分与 SWF 资产版本归一化）已全量实战验证闭环。
 
 ---
 
